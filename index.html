@@ -1,0 +1,4038 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Radar · Opções & Valor Justo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+
+  :root {
+    --bg: #0b0e14;
+    --surface: #12161f;
+    --surface-2: #181d28;
+    --surface-3: #1e2430;
+    --border: #2a3140;
+    --border-soft: #222834;
+    --text: #e8eaef;
+    --text-2: #9aa3b5;
+    --text-3: #6b7385;
+    --text-4: #4a5160;
+    --accent: #c9a227;
+    --accent-dim: rgba(201,162,39,.12);
+    --safe: #3d9b6e;
+    --safe-dim: rgba(61,155,110,.12);
+    --warn: #c9922a;
+    --warn-dim: rgba(201,146,42,.12);
+    --danger: #c45c5c;
+    --danger-dim: rgba(196,92,92,.12);
+    --blue: #4a7ab5;
+    --font: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.45;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 32px;
+  }
+
+  /* Topbar (stats + ações, glass) */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 12px 28px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: rgba(11, 14, 20, 0.55);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 16px -8px rgba(0, 0, 0, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .brand-mark {
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+  .brand-name {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .brand-name span {
+    color: var(--text-3);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text-3);
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover {
+    color: var(--text);
+    border-color: var(--text-4);
+    background: rgba(255, 255, 255, 0.04);
+  }
+  .stats {
+    display: flex;
+    gap: 32px;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* Buttons */
+  .btn {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background .12s, border-color .12s, color .12s;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover {
+    background: var(--surface-2);
+    border-color: var(--text-4);
+    color: var(--text);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0b0e14;
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    background: #d4ad35;
+    border-color: #d4ad35;
+    color: #0b0e14;
+  }
+  .btn-ghost {
+    background: transparent;
+  }
+  .btn-ghost-danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+  }
+  .btn-ghost-danger:hover {
+    background: var(--danger-dim);
+    border-color: var(--danger);
+  }
+  .btn-confirm-danger {
+    background: var(--danger) !important;
+    border-color: var(--danger) !important;
+    color: #fff !important;
+  }
+  .btn-confirm-danger:hover {
+    background: color-mix(in srgb, var(--danger) 88%, black) !important;
+  }
+
+  /* Main */
+  main {
+    padding: 24px 28px 48px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  /* Grid */
+  .positions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1px;
+    background: var(--border-soft);
+    border: 1px solid var(--border);
+  }
+
+  .pos-card {
+    background: var(--surface);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+  }
+  .pos-card:hover {
+    background: var(--surface-2);
+  }
+  .pos-card[data-risk="danger"] {
+    box-shadow: inset 3px 0 0 var(--danger);
+  }
+  .pos-card[data-risk="warn"] {
+    box-shadow: inset 3px 0 0 var(--warn);
+  }
+
+  .pos-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .pos-id {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .pos-ticker {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .badge-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+  }
+  .badge-call { color: var(--blue); border-color: color-mix(in srgb, var(--blue) 35%, var(--border)); }
+  .badge-put  { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+  .badge-style {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+  }
+  .pos-card {
+    cursor: pointer;
+  }
+  .pos-card .pos-menu-wrap,
+  .pos-card .pos-menu-btn,
+  .pos-card .pos-error input {
+    cursor: default;
+  }
+
+  /* Expand overlay */
+  .expand-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(5, 7, 12, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .expand-overlay.open { display: flex; }
+  /* (tema dark apenas) */
+  .expand-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 440px;
+    padding: 24px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 24px 64px rgba(0,0,0,.35);
+    position: relative;
+    animation: expandIn .18s ease-out;
+  }
+  @keyframes expandIn {
+    from { opacity: 0; transform: scale(.96) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .expand-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-3);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .expand-close:hover {
+    color: var(--text);
+    border-color: var(--text-4);
+  }
+  .expand-panel > .pos-card {
+    background: transparent;
+    padding: 0;
+    cursor: default;
+    box-shadow: none !important;
+  }
+  .expand-panel > .pos-card .pos-card-head {
+    padding-right: 36px;
+  }
+  .expand-panel .pos-ticker { font-size: 20px; }
+  .expand-panel .pos-price-block .value { font-size: 22px; }
+  .expand-panel .gauge-wrap { height: 4px; }
+  .expand-panel .gauge-marker { width: 11px; height: 11px; }
+  .expand-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .status-pill {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+  .status-pill.safe   { background: var(--safe-dim); color: var(--safe); }
+  .status-pill.warn   { background: var(--warn-dim); color: var(--warn); }
+  .status-pill.danger { background: var(--danger-dim); color: var(--danger); }
+  .status-pill.unknown { background: var(--surface-3); color: var(--text-3); }
+
+  .pos-menu-wrap { position: relative; margin-left: 4px; }
+  .pos-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-4);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    line-height: 1;
+  }
+  .pos-menu-btn:hover { color: var(--text-2); }
+  .pos-menu-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 24px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    z-index: 15;
+    min-width: 120px;
+  }
+  .pos-menu-dropdown.open { display: block; }
+  .pos-menu-dropdown button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 12.5px;
+    font-family: var(--font);
+    cursor: pointer;
+  }
+  .pos-menu-dropdown button:hover { background: var(--surface-2); }
+  .pos-menu-dropdown button.danger { color: var(--danger); }
+
+  /* Prices */
+  .pos-prices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pos-price-block .label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    margin-bottom: 3px;
+  }
+  .pos-price-block .value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .pos-price-block.strike .value {
+    color: var(--text-2);
+  }
+
+  /* Gauge */
+  .gauge-wrap {
+    position: relative;
+    height: 3px;
+    background: linear-gradient(90deg,
+      var(--safe) 0%,
+      var(--safe) 38%,
+      var(--warn) 50%,
+      var(--danger) 62%,
+      var(--danger) 100%);
+    opacity: 0.55;
+  }
+  .gauge-marker {
+    position: absolute;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid var(--surface);
+    transform: translate(-50%, -50%);
+  }
+  .gauge-strike {
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    width: 1px;
+    height: 11px;
+    background: var(--text-4);
+    transform: translateX(-50%);
+  }
+
+  .pos-distance {
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .risk-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .risk-dot.safe { background: var(--safe); }
+  .risk-dot.warn { background: var(--warn); }
+  .risk-dot.danger { background: var(--danger); }
+  .risk-dot.unknown { background: var(--text-3); }
+  .pos-distance.safe { color: var(--safe); }
+  .pos-distance.warn { color: var(--warn); }
+  .pos-distance.danger { color: var(--danger); }
+  .pos-distance.unknown { color: var(--text-3); }
+
+  .pos-spark {
+    height: 26px;
+  }
+  .pos-spark svg { width: 100%; height: 100%; display: block; }
+  .pos-spark .placeholder {
+    font-size: 11px;
+    color: var(--text-4);
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  .pos-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 11.5px;
+    color: var(--text-3);
+    font-family: var(--mono);
+  }
+  .pos-meta .exp-urgent { color: var(--warn); }
+  .pos-meta .exp-danger { color: var(--danger); }
+
+  .pos-extra {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--text-3);
+  }
+  .pos-extra span:last-child {
+    font-family: var(--mono);
+    color: var(--text-2);
+  }
+
+  .pos-error {
+    font-size: 11.5px;
+    color: var(--danger);
+    background: var(--danger-dim);
+    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .pos-error input {
+    width: 90px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    padding: 3px 6px;
+    font-size: 11.5px;
+    font-family: var(--font);
+  }
+
+  /* Empty */
+  .empty-state {
+    grid-column: 1 / -1;
+    padding: 64px 24px;
+    text-align: center;
+    background: var(--surface);
+  }
+  .empty-state h2 {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-2);
+    margin-bottom: 6px;
+  }
+  .empty-state p {
+    font-size: 12.5px;
+    color: var(--text-3);
+    max-width: 320px;
+    margin: 0 auto 16px;
+    line-height: 1.5;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,7,12,.65);
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 420px;
+    padding: 28px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-confirm { max-width: 380px; }
+  .modal h2 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  .confirm-msg {
+    font-size: 13.5px;
+    color: var(--text-2);
+    line-height: 1.55;
+    margin: 0 0 4px;
+    white-space: pre-line;
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .field input, .field textarea, .field select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    padding: 9px 11px;
+    font-size: 13px;
+    font-family: var(--font);
+  }
+  .field input:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .tipo-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .tipo-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    font-family: var(--font);
+  }
+  .tipo-btn.active {
+    background: var(--accent);
+    color: #0b0e14;
+  }
+
+  .settings-note {
+    font-size: 12.5px;
+    color: var(--text-2);
+    line-height: 1.55;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .settings-note a {
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .password-field { position: relative; }
+  .password-field input { padding-right: 40px; }
+  .eye-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    cursor: pointer;
+  }
+  .eye-btn:hover { color: var(--text-2); }
+
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 18px;
+    font-size: 12.5px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 60;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 28px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    font-size: 10.5px;
+    color: var(--text-4);
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
+    z-index: 20;
+  }
+
+  #opt_importFile { display: none; }
+
+  @media (max-width: 700px) {
+    .topbar, main { padding-left: 16px; padding-right: 16px; }
+    .positions-grid { grid-template-columns: 1fr; }
+    .stats { gap: 18px; }
+    .field-row { grid-template-columns: 1fr; }
+    .app-footer { padding: 0 16px; font-size: 9.5px; }
+  }
+
+/* --- módulo ações --- */
+
+  :root {
+    --bg: #0b0e14;
+    --surface: #12161f;
+    --surface-2: #181d28;
+    --surface-3: #1e2430;
+    --border: #2a3140;
+    --border-soft: #222834;
+    --text: #e8eaef;
+    --text-2: #9aa3b5;
+    --text-3: #6b7385;
+    --text-4: #4a5160;
+    --accent: #c9a227;
+    --safe: #3d9b6e;
+    --safe-dim: rgba(61,155,110,.12);
+    --warn: #c9922a;
+    --warn-dim: rgba(201,146,42,.12);
+    --danger: #c45c5c;
+    --danger-dim: rgba(196,92,92,.12);
+    --blue: #4a7ab5;
+    --font: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.45;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 32px;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    padding: 12px 28px;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    background: rgba(11, 14, 20, 0.55);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 16px -8px rgba(0, 0, 0, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(10px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(180%);
+  }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .brand-mark {
+    width: 18px;
+    height: 18px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+  .brand-name {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  .brand-name span {
+    color: var(--text-3);
+    font-weight: 400;
+    margin-left: 6px;
+  }
+
+  .stats { display: flex; gap: 32px; }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text-3);
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .icon-btn:hover {
+    color: var(--text);
+    border-color: var(--text-4);
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  .btn {
+    font-family: var(--font);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 7px 14px;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background .12s, border-color .12s, color .12s;
+    letter-spacing: 0.01em;
+  }
+  .btn:hover {
+    background: var(--surface-2);
+    border-color: var(--text-4);
+    color: var(--text);
+  }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0b0e14;
+    font-weight: 600;
+  }
+  .btn-primary:hover {
+    background: #d4ad35;
+    border-color: #d4ad35;
+    color: #0b0e14;
+  }
+  .btn-ghost { background: transparent; }
+  .btn-ghost-danger {
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+  }
+  .btn-ghost-danger:hover {
+    background: var(--danger-dim);
+    border-color: var(--danger);
+  }
+  .btn-confirm-danger {
+    background: var(--danger) !important;
+    border-color: var(--danger) !important;
+    color: #fff !important;
+  }
+
+  main {
+    padding: 24px 28px 48px;
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  .positions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 10px;
+  }
+
+  .pos-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+    cursor: pointer;
+  }
+  .pos-card:hover { background: var(--surface-2); border-color: var(--border-soft); }
+  .pos-card[data-risk="danger"] { box-shadow: inset 3px 0 0 var(--danger); }
+  .pos-card[data-risk="warn"] { box-shadow: inset 3px 0 0 var(--warn); }
+  .pos-card[data-risk="safe"] { box-shadow: inset 3px 0 0 var(--safe); }
+
+  .pos-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .pos-id { display: flex; flex-direction: column; gap: 4px; }
+  .pos-ticker {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .badge-row { display: flex; gap: 6px; align-items: center; }
+  .badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+  }
+
+  .status-pill {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    white-space: nowrap;
+  }
+  .status-pill.safe   { background: var(--safe-dim); color: var(--safe); }
+  .status-pill.warn   { background: var(--warn-dim); color: var(--warn); }
+  .status-pill.danger { background: var(--danger-dim); color: var(--danger); }
+  .status-pill.unknown { background: var(--surface-3); color: var(--text-3); }
+
+  .pos-menu-wrap { position: relative; margin-left: 4px; }
+  .pos-menu-btn {
+    background: none;
+    border: none;
+    color: var(--text-4);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 4px;
+    line-height: 1;
+  }
+  .pos-menu-btn:hover { color: var(--text-2); }
+  .pos-menu-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 24px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    z-index: 15;
+    min-width: 120px;
+  }
+  .pos-menu-dropdown.open { display: block; }
+  .pos-menu-dropdown button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 12.5px;
+    font-family: var(--font);
+    cursor: pointer;
+  }
+  .pos-menu-dropdown button:hover { background: var(--surface-2); }
+  .pos-menu-dropdown button.danger { color: var(--danger); }
+
+  .pos-prices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .pos-price-block .label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    margin-bottom: 3px;
+  }
+  .pos-price-block .value {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .pos-price-block.fair .value { color: var(--text-2); }
+
+  .gauge-wrap {
+    position: relative;
+    height: 3px;
+    background: linear-gradient(90deg,
+      var(--safe) 0%,
+      var(--safe) 38%,
+      var(--warn) 50%,
+      var(--danger) 62%,
+      var(--danger) 100%);
+    opacity: 0.55;
+  }
+  .gauge-marker {
+    position: absolute;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--text);
+    border: 2px solid var(--surface);
+    transform: translate(-50%, -50%);
+  }
+  .gauge-mid {
+    position: absolute;
+    left: 50%;
+    top: -4px;
+    width: 1px;
+    height: 11px;
+    background: var(--text-4);
+    transform: translateX(-50%);
+  }
+
+  .pos-distance {
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .risk-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .risk-dot.safe { background: var(--safe); }
+  .risk-dot.warn { background: var(--warn); }
+  .risk-dot.danger { background: var(--danger); }
+  .risk-dot.unknown { background: var(--text-3); }
+  .pos-distance.safe { color: var(--safe); }
+  .pos-distance.warn { color: var(--warn); }
+  .pos-distance.danger { color: var(--danger); }
+  .pos-distance.unknown { color: var(--text-3); }
+
+  .pos-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .pos-meta .mi {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+  }
+  .pos-meta .mi span:first-child {
+    color: var(--text-3);
+    letter-spacing: 0.02em;
+  }
+  .pos-meta .mi span:last-child {
+    font-family: var(--mono);
+    color: var(--text-2);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .pos-extra {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    color: var(--text-3);
+  }
+  .pos-extra span:last-child {
+    font-family: var(--mono);
+    color: var(--text-2);
+  }
+
+  .pos-error {
+    font-size: 11.5px;
+    color: var(--danger);
+    background: var(--danger-dim);
+    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .pos-error input {
+    width: 90px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    padding: 3px 6px;
+    font-size: 11.5px;
+    font-family: var(--font);
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    padding: 64px 24px;
+    text-align: center;
+    background: var(--surface);
+  }
+  .empty-state h2 {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-2);
+    margin-bottom: 6px;
+  }
+  .empty-state p {
+    font-size: 12.5px;
+    color: var(--text-3);
+    max-width: 340px;
+    margin: 0 auto 16px;
+    line-height: 1.5;
+  }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5,7,12,.65);
+    z-index: 50;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 420px;
+    padding: 28px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-confirm { max-width: 380px; }
+  .modal h2 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+  }
+  .confirm-msg {
+    font-size: 13.5px;
+    color: var(--text-2);
+    line-height: 1.55;
+    margin: 0 0 4px;
+    white-space: pre-line;
+  }
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-3);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--text);
+    padding: 9px 11px;
+    font-size: 13px;
+    font-family: var(--font);
+  }
+  .field input:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .field-hint {
+    font-size: 11px;
+    color: var(--text-4);
+    margin-top: 4px;
+  }
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .settings-note {
+    font-size: 12.5px;
+    color: var(--text-2);
+    line-height: 1.55;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .settings-note a { color: var(--accent); font-weight: 500; }
+
+  .password-field { position: relative; }
+  .password-field input { padding-right: 40px; }
+  .eye-btn {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    cursor: pointer;
+  }
+  .eye-btn:hover { color: var(--text-2); }
+
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(12px);
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 18px;
+    font-size: 12.5px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 60;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .expand-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(5, 7, 12, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .expand-overlay.open { display: flex; }
+  .expand-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    width: 100%;
+    max-width: 440px;
+    padding: 24px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 24px 64px rgba(0,0,0,.35);
+    position: relative;
+    animation: expandIn .18s ease-out;
+  }
+  @keyframes expandIn {
+    from { opacity: 0; transform: scale(.96) translateY(8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .expand-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-3);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .expand-close:hover { color: var(--text); border-color: var(--text-4); }
+  .expand-panel > .pos-card {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: default;
+    box-shadow: none !important;
+  }
+  .expand-panel > .pos-card:hover {
+    background: transparent;
+    border: none;
+  }
+  .expand-panel > .pos-card .pos-card-head { padding-right: 36px; }
+  .expand-panel .pos-ticker { font-size: 20px; }
+  .expand-panel .pos-price-block .value { font-size: 22px; }
+  .expand-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-soft);
+  }
+
+  .app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 28px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    font-size: 10.5px;
+    color: var(--text-4);
+    font-family: var(--mono);
+    letter-spacing: 0.02em;
+    z-index: 20;
+  }
+
+  #gj_importFile { display: none; }
+
+  @media (max-width: 700px) {
+    .topbar, main { padding-left: 16px; padding-right: 16px; }
+    .positions-grid { grid-template-columns: 1fr; }
+    .field-row { grid-template-columns: 1fr; }
+    .app-footer { padding: 0 16px; font-size: 9.5px; }
+  }
+
+/* --- hub --- */
+
+  .view { display: none; min-height: 100vh; }
+  .view.active { display: block; }
+  .hub-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px 56px;
+  }
+  .hub-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .hub-brand .brand-mark {
+    width: 22px; height: 22px;
+    background: var(--accent);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+  .hub-brand h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .hub-sub {
+    color: var(--text-3);
+    font-size: 13px;
+    margin-bottom: 36px;
+    text-align: center;
+    max-width: 420px;
+    line-height: 1.5;
+  }
+  .hub-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(240px, 320px));
+    gap: 16px;
+    width: 100%;
+    max-width: 680px;
+  }
+  @media (max-width: 640px) {
+    .hub-grid { grid-template-columns: 1fr; max-width: 360px; }
+  }
+  .hub-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 28px 24px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .hub-card:hover {
+    background: var(--surface-2);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .hub-card-kicker {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+  .hub-card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+  .hub-card p {
+    font-size: 12.5px;
+    color: var(--text-3);
+    line-height: 1.5;
+    margin-bottom: 18px;
+  }
+  .hub-card-cta {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-2);
+    letter-spacing: 0.04em;
+  }
+  .hub-card:hover .hub-card-cta { color: var(--accent); }
+  .hub-foot {
+    margin-top: 40px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--text-4);
+    letter-spacing: 0.04em;
+  }
+  .module-switch {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-left: 4px;
+  }
+  .module-switch button {
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-3);
+    cursor: pointer;
+  }
+  .module-switch button.active {
+    background: var(--accent);
+    color: #0b0e14;
+  }
+  .module-switch button:hover:not(.active) {
+    color: var(--text);
+    background: rgba(255,255,255,.04);
+  }
+  .hub-link {
+    font-size: 11px;
+    color: var(--text-3);
+    background: none;
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    cursor: pointer;
+    font-family: var(--font);
+    border-radius: 2px;
+    margin-left: 8px;
+  }
+  .hub-link:hover { color: var(--text); border-color: var(--text-4); }
+  .brand { flex-wrap: wrap; }
+
+</style>
+</head>
+<body>
+
+<div class="view active" id="view-opcoes">
+
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-name">Radar<span>Exercício</span></div>
+    <div class="module-switch">
+      <button type="button" data-go-mod="opcoes" class="active">Opções</button>
+      <button type="button" data-go-mod="acoes" class="">Ações</button>
+    </div>
+
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value" id="opt_statTotal">0</span>
+        <span class="stat-label">Posições</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="opt_statRisk">0</span>
+        <span class="stat-label">Em risco</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="opt_statUpdated">—</span>
+        <span class="stat-label">Última cotação</span>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="icon-btn" id="opt_settingsBtn" title="Configurações (token API)">⚙</button>
+    <button class="btn" id="opt_exportBtn" title="Exportar posições para Excel">Exportar Excel</button>
+    <button class="btn" id="opt_importBtn" title="Importar posições de Excel">Importar Excel</button>
+    <input type="file" id="opt_importFile" accept=".xlsx,.xls,.csv">
+    <button class="btn" id="opt_refreshBtn">Atualizar</button>
+    <button class="btn btn-ghost-danger" id="opt_clearBtn" title="Apagar todas as posições">Limpar</button>
+    <button class="btn btn-primary" id="opt_addBtn">Nova</button>
+  </div>
+</div>
+
+<main>
+  <div class="section-label">Livro de opções vendidas · ordenado por vencimento</div>
+  <div class="positions-grid" id="opt_grid"></div>
+</main>
+
+<footer class="app-footer">
+  <span>RADAR DE EXERCÍCIO · USO PESSOAL</span>
+  <span>DADOS: BRAPI · NÃO CONSTITUI RECOMENDAÇÃO</span>
+</footer>
+
+<!-- Modal posição -->
+<div class="modal-overlay" id="opt_posModalOverlay">
+  <div class="modal">
+    <h2 id="opt_posModalTitle">Nova posição</h2>
+    <form id="opt_posForm">
+      <input type="hidden" id="opt_posId">
+      <div class="field">
+        <label for="opt_posTicker">Ticker do ativo-objeto</label>
+        <input type="text" id="opt_posTicker" placeholder="Ex: PETR4" required autocomplete="off">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Tipo da opção</label>
+          <div class="tipo-toggle" id="opt_posTipoToggle">
+            <button type="button" class="tipo-btn active" data-tipo="CALL">CALL</button>
+            <button type="button" class="tipo-btn" data-tipo="PUT">PUT</button>
+          </div>
+          <input type="hidden" id="opt_posTipo" value="CALL">
+        </div>
+        <div class="field">
+          <label for="opt_posVencimento">Vencimento</label>
+          <input type="date" id="opt_posVencimento" required>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="opt_posStrike">Strike (R$)</label>
+          <input type="text" id="opt_posStrike" inputmode="decimal" placeholder="Ex: 39,00" required>
+        </div>
+        <div class="field">
+          <label>Estilo</label>
+          <div class="tipo-toggle" id="opt_posEstiloToggle">
+            <button type="button" class="tipo-btn active" data-estilo="EUROPEIA">Europeia</button>
+            <button type="button" class="tipo-btn" data-estilo="AMERICANA">Americana</button>
+          </div>
+          <input type="hidden" id="opt_posEstilo" value="EUROPEIA">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="opt_posQtd">Quantidade vendida (opcional)</label>
+          <input type="text" id="opt_posQtd" inputmode="numeric" placeholder="Ex: 2.400">
+        </div>
+        <div class="field">
+          <label for="opt_posPremio">Prêmio recebido/opção (opcional)</label>
+          <input type="text" id="opt_posPremio" inputmode="decimal" placeholder="Ex: 0,85">
+        </div>
+      </div>
+      <div class="field">
+        <label for="opt_posNotas">Notas (opcional)</label>
+        <textarea id="opt_posNotas" rows="2" placeholder="Ex: trava de exercício, rolar se ITM..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="opt_posCancelBtn">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar posição</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal settings -->
+<div class="modal-overlay" id="opt_settingsModalOverlay">
+  <div class="modal">
+    <h2>Configurações</h2>
+    <div class="settings-note">
+      As cotações vêm da <strong>brapi.dev</strong>. Sem token, só PETR4, VALE3, MGLU3 e ITUB4 funcionam.
+      Crie um token gratuito em
+      <a href="https://brapi.dev/dashboard" target="_blank" rel="noopener">brapi.dev/dashboard</a>
+      (15.000 req/mês) e cole abaixo.
+    </div>
+    <div class="field">
+      <label for="opt_apiToken">Token da API (brapi.dev)</label>
+      <div class="password-field">
+        <input type="password" id="opt_apiToken" placeholder="Cole seu token aqui" autocomplete="off">
+        <button type="button" class="eye-btn" id="opt_toggleTokenBtn" aria-label="Mostrar token">
+          <svg id="opt_eyeIconOpen" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="opt_eyeIconClosed" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 19c-7 0-11-7-11-7a21.3 21.3 0 0 1 5.06-6.06M9.9 4.24A10.5 10.5 0 0 1 12 4c7 0 11 7 11 7a21.4 21.4 0 0 1-2.94 3.94M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="opt_settingsCancelBtn">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="opt_settingsSaveBtn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmação -->
+<div class="modal-overlay" id="opt_confirmModalOverlay">
+  <div class="modal modal-confirm">
+    <h2 id="opt_confirmTitle">Confirmar</h2>
+    <p class="confirm-msg" id="opt_confirmMsg"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="opt_confirmCancelBtn">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="opt_confirmOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- Expand card -->
+<div class="expand-overlay" id="opt_expandOverlay">
+  <div class="expand-panel" id="opt_expandPanel"></div>
+</div>
+
+<div class="toast" id="opt_toast"></div>
+
+
+
+</div>
+
+<div class="view" id="view-acoes">
+
+
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-name">Radar<span>Valor justo</span></div>
+    <div class="module-switch">
+      <button type="button" data-go-mod="opcoes" class="">Opções</button>
+      <button type="button" data-go-mod="acoes" class="active">Ações</button>
+    </div>
+
+    </div>
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value" id="gj_statTotal">0</span>
+        <span class="stat-label">Ações</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="gj_statDiscount">0</span>
+        <span class="stat-label">Com desconto</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="gj_statUpdated">—</span>
+        <span class="stat-label">Última cotação</span>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="icon-btn" id="gj_settingsBtn" title="Configurações (token API)">⚙</button>
+    <button class="btn" id="gj_exportBtn" title="Exportar para Excel">Exportar Excel</button>
+    <button class="btn" id="gj_importBtn" title="Importar de Excel">Importar Excel</button>
+    <input type="file" id="gj_importFile" accept=".xlsx,.xls,.csv">
+    <button class="btn" id="gj_refreshBtn">Atualizar</button>
+    <button class="btn btn-ghost-danger" id="gj_clearBtn" title="Apagar todas">Limpar</button>
+    <button class="btn btn-primary" id="gj_addBtn">Nova</button>
+  </div>
+</div>
+
+<main>
+  <div class="section-label">Ações · preço vs valor justo (Graham) · √(22,5 × LPA × VPA)</div>
+  <div class="positions-grid" id="gj_grid"></div>
+</main>
+
+<footer class="app-footer">
+  <span>RADAR DE VALOR JUSTO · USO PESSOAL</span>
+  <span>GRAHAM · BRAPI + FUNDAMENTUS · NÃO CONSTITUI RECOMENDAÇÃO</span>
+</footer>
+
+<!-- Modal posição -->
+<div class="modal-overlay" id="gj_posModalOverlay">
+  <div class="modal">
+    <h2 id="gj_posModalTitle">Nova ação</h2>
+    <form id="gj_posForm">
+      <input type="hidden" id="gj_posId">
+      <div class="field">
+        <label for="gj_posTicker">Ticker</label>
+        <input type="text" id="gj_posTicker" placeholder="Ex: ITUB4" required autocomplete="off">
+        <div class="field-hint">Digite só o ticker e clique em Buscar (ou Enter).</div>
+      </div>
+      <div id="gj_fundPreview" style="display:none;margin-bottom:14px;padding:12px 14px;background:var(--bg);border:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;font-size:12.5px">
+          <div>
+            <span style="color:var(--text-3);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Preço atual</span>
+            <span id="gj_prevPrice" style="font-family:var(--mono);font-weight:500">—</span>
+          </div>
+          <div>
+            <span style="color:var(--text-3);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Valor justo</span>
+            <span id="gj_prevFair" style="font-family:var(--mono);font-weight:500">—</span>
+          </div>
+          <div>
+            <span style="color:var(--text-3);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">LPA</span>
+            <span id="gj_prevLpa" style="font-family:var(--mono)">—</span>
+          </div>
+          <div>
+            <span style="color:var(--text-3);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">VPA</span>
+            <span id="gj_prevVpa" style="font-family:var(--mono)">—</span>
+          </div>
+        </div>
+        <div id="gj_prevDist" style="margin-top:10px;font-size:12px;font-weight:500;color:var(--text-2)"></div>
+      </div>
+      <div class="field-row" id="gj_manualFundRow" style="display:none">
+        <div class="field">
+          <label for="gj_posLpa">LPA (ajuste manual)</label>
+          <input type="text" id="gj_posLpa" inputmode="decimal" placeholder="Ex: 3,50">
+        </div>
+        <div class="field">
+          <label for="gj_posVpa">VPA (ajuste manual)</label>
+          <input type="text" id="gj_posVpa" inputmode="decimal" placeholder="Ex: 18,00">
+        </div>
+      </div>
+      <div class="field">
+        <label for="gj_posNotas">Notas (opcional)</label>
+        <textarea id="gj_posNotas" rows="2" placeholder="Opcional"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="gj_posCancelBtn">Cancelar</button>
+        <button type="button" class="btn" id="gj_fetchFundBtn">Buscar</button>
+        <button type="submit" class="btn btn-primary" id="gj_posSaveBtn">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal settings -->
+<div class="modal-overlay" id="gj_settingsModalOverlay">
+  <div class="modal">
+    <h2>Configurações</h2>
+    <div class="settings-note">
+      <strong>brapi</strong> → preço ao vivo (obrigatório para Atualizar).
+      <strong>bolsai</strong> → LPA/VPA e indicadores (a API <em>não libera CORS</em> no navegador; pode falhar no HTML — use valores já salvos ou preencha na mão).
+      <br>
+      Token:
+      <a href="https://brapi.dev/dashboard" target="_blank" rel="noopener">brapi.dev/dashboard</a>
+      ·
+      <a href="https://usebolsai.com" target="_blank" rel="noopener">usebolsai.com</a>
+    </div>
+    <div class="field">
+      <label for="gj_apiToken">Token brapi.dev (cotações)</label>
+      <div class="password-field">
+        <input type="password" id="gj_apiToken" placeholder="Token brapi" autocomplete="off">
+        <button type="button" class="eye-btn" id="gj_toggleTokenBtn" aria-label="Mostrar token">👁</button>
+      </div>
+    </div>
+    <div class="field">
+      <label for="gj_bolsaiKey">API key bolsai (LPA / VPA)</label>
+      <div class="password-field">
+        <input type="password" id="gj_bolsaiKey" placeholder="sk_live_..." autocomplete="off">
+        <button type="button" class="eye-btn" id="gj_toggleBolsaiBtn" aria-label="Mostrar chave">👁</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="gj_settingsCancelBtn">Cancelar</button>
+      <button type="button" class="btn" id="gj_testApisBtn">Testar APIs</button>
+      <button type="button" class="btn btn-primary" id="gj_settingsSaveBtn">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm -->
+<div class="modal-overlay" id="gj_confirmModalOverlay">
+  <div class="modal modal-confirm">
+    <h2 id="gj_confirmTitle">Confirmar</h2>
+    <p class="confirm-msg" id="gj_confirmMsg"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="gj_confirmCancelBtn">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="gj_confirmOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="expand-overlay" id="gj_expandOverlay">
+  <div class="expand-panel" id="gj_expandPanel"></div>
+</div>
+
+<div class="toast" id="gj_toast"></div>
+
+
+
+</div>
+
+<script>
+(function () {
+  var LS_MOD = "radar.hub.module";
+  function show(mod) {
+    if (mod !== "opcoes" && mod !== "acoes") mod = "opcoes";
+    document.getElementById("view-opcoes").classList.toggle("active", mod === "opcoes");
+    document.getElementById("view-acoes").classList.toggle("active", mod === "acoes");
+    document.querySelectorAll(".module-switch [data-go-mod]").forEach(function (el) {
+      el.classList.toggle("active", el.getAttribute("data-go-mod") === mod);
+    });
+    try { localStorage.setItem(LS_MOD, mod); } catch (e) {}
+  }
+  document.addEventListener("click", function (e) {
+    var mod = e.target.closest("[data-go-mod]");
+    if (mod) {
+      var m = mod.getAttribute("data-go-mod");
+      if (m === "opcoes" || m === "acoes") show(m);
+    }
+  });
+  var last = null;
+  try { last = localStorage.getItem(LS_MOD); } catch (e) {}
+  show(last === "acoes" ? "acoes" : "opcoes");
+})();
+</script>
+
+<script>
+/* ===== OPÇÕES ===== */
+
+(function () {
+  "use strict";
+
+  var LS_POSITIONS = "radarExercicio.positions";
+  var LS_SETTINGS  = "radarExercicio.settings";
+  var LS_HISTORY   = "radarExercicio.history";
+  var TEST_TICKERS = ["PETR4", "VALE3", "MGLU3", "ITUB4"];
+
+  var state = {
+    positions: [],
+    settings: { token: "" },
+    history: {},
+    quotes: {},
+    lastUpdated: null
+  };
+
+  function loadState() {
+    try { state.positions = JSON.parse(localStorage.getItem(LS_POSITIONS) || "[]"); } catch (e) { state.positions = []; }
+    try { state.settings  = JSON.parse(localStorage.getItem(LS_SETTINGS) || "{}"); } catch (e) { state.settings = {}; }
+    try { state.history   = JSON.parse(localStorage.getItem(LS_HISTORY) || "{}"); } catch (e) { state.history = {}; }
+    if (!state.settings.token) state.settings.token = "";
+  }
+  function savePositions() { localStorage.setItem(LS_POSITIONS, JSON.stringify(state.positions)); }
+  function saveSettings()  { localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings)); }
+  function saveHistory()   { localStorage.setItem(LS_HISTORY, JSON.stringify(state.history)); }
+
+  function uid() { return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function parseNum(str) {
+    if (str === null || str === undefined || str === "") return null;
+    if (typeof str === "number") return isNaN(str) ? null : str;
+    var s = String(str).trim();
+    if (!s) return null;
+    if (s.indexOf(",") !== -1) {
+      s = s.replace(/\./g, "").replace(",", ".");
+    }
+    var n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  }
+  function fmtBRL(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+  function fmtPct(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    var sign = n > 0 ? "+" : "";
+    return sign + n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+  }
+  function fmtDateBR(iso) {
+    if (!iso) return "—";
+    var p = iso.split("-");
+    return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso;
+  }
+  function todayISO() {
+    var d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function daysUntil(iso) {
+    if (!iso) return null;
+    var target = new Date(iso + "T00:00:00");
+    var now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return Math.round((target - now) / 86400000);
+  }
+  function toMaskedMoney(n) {
+    if (n === null || n === undefined || isNaN(n)) return "";
+    return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function toMaskedInt(n) {
+    if (n === null || n === undefined || isNaN(n)) return "";
+    return Math.round(n).toLocaleString("pt-BR");
+  }
+  function applyMoneyMask(el) {
+    el.addEventListener("input", function () {
+      var digits = el.value.replace(/\D/g, "");
+      if (!digits) { el.value = ""; return; }
+      el.value = (parseInt(digits, 10) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    });
+  }
+  function applyIntMask(el) {
+    el.addEventListener("input", function () {
+      var digits = el.value.replace(/\D/g, "");
+      if (!digits) { el.value = ""; return; }
+      el.value = parseInt(digits, 10).toLocaleString("pt-BR");
+    });
+  }
+  applyMoneyMask(document.getElementById("opt_posStrike"));
+  applyMoneyMask(document.getElementById("opt_posPremio"));
+  applyIntMask(document.getElementById("opt_posQtd"));
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function riskState(current, strike, tipo) {
+    if (current === null || current === undefined || !strike) return { state: "unknown", pct: null };
+    var pct = (tipo === "PUT")
+      ? ((strike - current) / strike) * 100
+      : ((current - strike) / strike) * 100;
+    var s = pct >= 0 ? "danger" : (pct >= -3 ? "warn" : "safe");
+    return { state: s, pct: pct };
+  }
+
+  function riskLabel(risk, pct, tipo) {
+    if (risk === "unknown") return "Aguardando cotação";
+    if (pct === null) return "";
+    var abs = Math.abs(pct).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    if (risk === "danger") {
+      if (tipo === "PUT") return "No strike ou abaixo — risco de exercício (" + fmtPct(pct) + ")";
+      return "No strike ou acima — risco de exercício (" + fmtPct(pct) + ")";
+    }
+    if (risk === "warn") return "Aproximando — faltam " + abs + "%";
+    return "Longe do strike — faltam " + abs + "%";
+  }
+
+  function statusText(risk) {
+    if (risk === "danger") return "Risco de exercício";
+    if (risk === "warn") return "Atenção";
+    if (risk === "safe") return "Observação";
+    return "—";
+  }
+
+  function markerPos(current, strike) {
+    if (current === null || !strike) return 50;
+    var min = strike * 0.80, max = strike * 1.20;
+    return Math.max(2, Math.min(98, ((current - min) / (max - min)) * 100));
+  }
+
+  // Toast
+  var toastEl = document.getElementById("opt_toast");
+  var toastTimer = null;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2800);
+  }
+
+  // Confirm modal
+  function showConfirm(opts) {
+    return new Promise(function (resolve) {
+      var overlay = document.getElementById("opt_confirmModalOverlay");
+      var titleEl = document.getElementById("opt_confirmTitle");
+      var msgEl = document.getElementById("opt_confirmMsg");
+      var okBtn = document.getElementById("opt_confirmOkBtn");
+      var cancelBtn = document.getElementById("opt_confirmCancelBtn");
+
+      titleEl.textContent = opts.title || "Confirmar";
+      msgEl.textContent = opts.message || "";
+      okBtn.textContent = opts.okText || "OK";
+      cancelBtn.textContent = opts.cancelText || "Cancelar";
+
+      okBtn.classList.toggle("btn-confirm-danger", !!opts.danger);
+      okBtn.classList.toggle("btn-primary", !opts.danger);
+
+      function cleanup(result) {
+        overlay.classList.remove("open");
+        okBtn.removeEventListener("click", onOk);
+        cancelBtn.removeEventListener("click", onCancel);
+        overlay.removeEventListener("click", onOverlay);
+        resolve(result);
+      }
+      function onOk() { cleanup(true); }
+      function onCancel() { cleanup(false); }
+      function onOverlay(e) { if (e.target === overlay) cleanup(null); }
+
+      okBtn.addEventListener("click", onOk);
+      cancelBtn.addEventListener("click", onCancel);
+      overlay.addEventListener("click", onOverlay);
+      overlay.classList.add("open");
+      okBtn.focus();
+    });
+  }
+
+  // Quotes
+  function fetchQuote(ticker) {
+    var token = state.settings.token;
+    var url = "https://brapi.dev/api/quote/" + encodeURIComponent(ticker);
+    if (token) url += "?token=" + encodeURIComponent(token);
+    return fetch(url)
+      .then(function (r) {
+        if (!r.ok) {
+          if (r.status === 401) throw new Error(TEST_TICKERS.indexOf(ticker) === -1 ? "precisa de token" : "token inválido");
+          if (r.status === 404) throw new Error("ticker não encontrado");
+          if (r.status === 402) throw new Error("limite mensal atingido");
+          throw new Error("erro " + r.status);
+        }
+        return r.json();
+      })
+      .then(function (data) {
+        if (data && data.results && data.results[0] && typeof data.results[0].regularMarketPrice === "number") {
+          return { price: data.results[0].regularMarketPrice, error: null };
+        }
+        throw new Error("sem dados");
+      })
+      .catch(function (err) {
+        return { price: null, error: err.message || "falha ao buscar" };
+      });
+  }
+
+  function recordHistory(ticker, price) {
+    if (price === null || price === undefined) return;
+    if (!state.history[ticker]) state.history[ticker] = [];
+    var today = todayISO();
+    var arr = state.history[ticker];
+    var last = arr[arr.length - 1];
+    if (last && last.date === today) last.price = price;
+    else arr.push({ date: today, price: price });
+    if (arr.length > 90) arr.splice(0, arr.length - 90);
+  }
+
+  function refreshQuotes() {
+    var tickers = Array.from(new Set(state.positions.map(function (p) { return p.ticker; })));
+    if (tickers.length === 0) { render(); return Promise.resolve(); }
+    var btn = document.getElementById("opt_refreshBtn");
+    btn.disabled = true;
+    btn.textContent = "Atualizando...";
+    return Promise.all(tickers.map(function (t) {
+      return fetchQuote(t).then(function (res) {
+        state.quotes[t] = res;
+        if (!res.error) recordHistory(t, res.price);
+      });
+    })).then(function () {
+      state.lastUpdated = new Date();
+      saveHistory();
+      btn.disabled = false;
+      btn.textContent = "Atualizar";
+      render();
+    });
+  }
+
+  function sparklineSVG(ticker, strike, tipo) {
+    var hist = state.history[ticker] || [];
+    if (hist.length < 2) {
+      return '<div class="placeholder">Histórico a partir do próximo acesso</div>';
+    }
+    var pts = hist.slice(-20).map(function (h) {
+      return (tipo === "PUT")
+        ? ((strike - h.price) / strike) * 100
+        : ((h.price - strike) / strike) * 100;
+    });
+    var min = Math.min.apply(null, pts.concat([0]));
+    var max = Math.max.apply(null, pts.concat([0]));
+    var range = (max - min) || 1;
+    var w = 280, h = 24, pad = 2;
+    var stepX = (w - pad * 2) / (pts.length - 1 || 1);
+    var coords = pts.map(function (v, i) {
+      var x = pad + i * stepX;
+      var y = pad + (1 - (v - min) / range) * (h - pad * 2);
+      return x.toFixed(1) + "," + y.toFixed(1);
+    });
+    var zeroY = pad + (1 - (0 - min) / range) * (h - pad * 2);
+    var lastVal = pts[pts.length - 1];
+    var lineColor = lastVal >= 0 ? "var(--danger)" : (lastVal >= -3 ? "var(--warn)" : "var(--safe)");
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+      '<line x1="0" y1="' + zeroY.toFixed(1) + '" x2="' + w + '" y2="' + zeroY.toFixed(1) + '" stroke="var(--border)" stroke-width="1" stroke-dasharray="2,2"/>' +
+      '<polyline points="' + coords.join(" ") + '" fill="none" stroke="' + lineColor + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>' +
+      "</svg>";
+  }
+
+  function render() {
+    var grid = document.getElementById("opt_grid");
+    var positions = state.positions.slice().sort(function (a, b) {
+      return (daysUntil(a.vencimento) || 999) - (daysUntil(b.vencimento) || 999);
+    });
+
+    document.getElementById("opt_statTotal").textContent = positions.length;
+    var riskyCount = 0;
+
+    if (positions.length === 0) {
+      grid.innerHTML =
+        '<div class="empty-state">' +
+        "<h2>Nenhuma posição cadastrada</h2>" +
+        "<p>Cadastre as opções vendidas ou importe um Excel com suas posições.</p>" +
+        '<button class="btn btn-primary" id="opt_emptyAddBtn">Nova posição</button>' +
+        "</div>";
+      document.getElementById("opt_emptyAddBtn").addEventListener("click", function () { openPosModal(); });
+    } else {
+      grid.innerHTML = positions.map(cardHTML).join("");
+    }
+
+    positions.forEach(function (p) {
+      var q = state.quotes[p.ticker];
+      if (q && !q.error) {
+        var r = riskState(q.price, p.strike, p.tipo || "CALL");
+        if (r.state === "warn" || r.state === "danger") riskyCount++;
+      }
+    });
+    document.getElementById("opt_statRisk").textContent = riskyCount;
+    document.getElementById("opt_statUpdated").textContent = state.lastUpdated
+      ? state.lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+      : "—";
+
+    grid.querySelectorAll(".pos-menu-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var dd = btn.parentElement.querySelector(".pos-menu-dropdown");
+        document.querySelectorAll(".pos-menu-dropdown.open").forEach(function (o) {
+          if (o !== dd) o.classList.remove("open");
+        });
+        dd.classList.toggle("open");
+      });
+    });
+    grid.querySelectorAll("[data-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openPosModal(btn.getAttribute("data-edit"));
+      });
+    });
+    grid.querySelectorAll("[data-delete]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        deletePosition(btn.getAttribute("data-delete"));
+      });
+    });
+    grid.querySelectorAll("[data-manual]").forEach(function (inp) {
+      inp.addEventListener("click", function (e) { e.stopPropagation(); });
+      inp.addEventListener("change", function () {
+        var ticker = inp.getAttribute("data-manual");
+        var val = parseNum(inp.value);
+        if (val !== null) {
+          state.quotes[ticker] = { price: val, error: null, manual: true };
+          recordHistory(ticker, val);
+          saveHistory();
+          render();
+        }
+      });
+    });
+    grid.querySelectorAll(".pos-card[data-id]").forEach(function (card) {
+      card.addEventListener("click", function (e) {
+        if (e.target.closest(".pos-menu-wrap") || e.target.closest(".pos-error")) return;
+        openExpand(card.getAttribute("data-id"));
+      });
+    });
+  }
+
+  function openExpand(id) {
+    var p = state.positions.find(function (x) { return x.id === id; });
+    if (!p) return;
+    var panel = document.getElementById("opt_expandPanel");
+    panel.innerHTML =
+      '<button type="button" class="expand-close" id="opt_expandCloseBtn" aria-label="Fechar">×</button>' +
+      cardHTML(p, { expanded: true }) +
+      '<div class="expand-actions">' +
+        '<button type="button" class="btn" id="opt_expandEditBtn">Editar</button>' +
+        '<button type="button" class="btn btn-ghost-danger" id="opt_expandDeleteBtn">Remover</button>' +
+      '</div>';
+    // strip nested article chrome if needed — cardHTML already returns article
+    document.getElementById("opt_expandOverlay").classList.add("open");
+    document.getElementById("opt_expandCloseBtn").addEventListener("click", closeExpand);
+    document.getElementById("opt_expandEditBtn").addEventListener("click", function () {
+      closeExpand();
+      openPosModal(id);
+    });
+    document.getElementById("opt_expandDeleteBtn").addEventListener("click", function () {
+      closeExpand();
+      deletePosition(id);
+    });
+  }
+  function closeExpand() {
+    document.getElementById("opt_expandOverlay").classList.remove("open");
+  }
+  document.getElementById("opt_expandOverlay").addEventListener("click", function (e) {
+    if (e.target === this) closeExpand();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeExpand();
+  });
+
+  function estiloLabel(estilo) {
+    return estilo === "AMERICANA" ? "Americana" : "Europeia";
+  }
+  function estiloShort(estilo) {
+    return estilo === "AMERICANA" ? "AM" : "EU";
+  }
+
+  function cardHTML(p, opts) {
+    opts = opts || {};
+    var expanded = !!opts.expanded;
+    var q = state.quotes[p.ticker];
+    var current = q && !q.error ? q.price : null;
+    var tipo = p.tipo || "CALL";
+    var estilo = p.estilo || "EUROPEIA";
+    var risk = riskState(current, p.strike, tipo);
+    var dleft = daysUntil(p.vencimento);
+    var expClass = "";
+    if (dleft !== null && dleft <= 2) expClass = "exp-danger";
+    else if (dleft !== null && dleft <= 7) expClass = "exp-urgent";
+
+    var expText = dleft === null ? "" :
+      (dleft < 0 ? "Vencida" : dleft === 0 ? "Vence hoje" : dleft + "d até o vencimento");
+
+    var mPos = markerPos(current, p.strike);
+    var totalPremio = (p.quantidade && p.premio) ? p.quantidade * p.premio : null;
+    var badgeClass = tipo === "PUT" ? "badge-put" : "badge-call";
+
+    var errorBlock = "";
+    if (q && q.error && !expanded) {
+      errorBlock =
+        '<div class="pos-error"><span>Cotação: ' + escapeHtml(q.error) + '</span>' +
+        '<input type="text" placeholder="preço manual" data-manual="' + escapeHtml(p.ticker) + '"></div>';
+    } else if (q && q.error && expanded) {
+      errorBlock = '<div class="pos-error"><span>Cotação: ' + escapeHtml(q.error) + '</span></div>';
+    }
+
+    var menuBlock = expanded ? "" : (
+      '<div class="pos-menu-wrap">' +
+        '<button class="pos-menu-btn" type="button">⋮</button>' +
+        '<div class="pos-menu-dropdown">' +
+          '<button type="button" data-edit="' + p.id + '">Editar</button>' +
+          '<button type="button" class="danger" data-delete="' + p.id + '">Remover</button>' +
+        '</div>' +
+      '</div>'
+    );
+
+    var extraNotes = "";
+    if (expanded && p.notas) {
+      extraNotes = '<div class="pos-extra"><span>Notas</span><span style="max-width:60%;text-align:right">' + escapeHtml(p.notas) + '</span></div>';
+    }
+    if (expanded && p.quantidade) {
+      extraNotes += '<div class="pos-extra"><span>Quantidade vendida</span><span>' + toMaskedInt(p.quantidade) + '</span></div>';
+    }
+
+    return (
+      '<article class="pos-card" data-risk="' + risk.state + '" data-id="' + escapeHtml(p.id) + '">' +
+        '<div class="pos-card-head">' +
+          '<div class="pos-id">' +
+            '<span class="pos-ticker">' + escapeHtml(p.ticker) + '</span>' +
+            '<div class="badge-row">' +
+              '<span class="badge ' + badgeClass + '">' + escapeHtml(tipo) + '</span>' +
+              '<span class="badge">Vendida</span>' +
+              '<span class="badge" title="Opção ' + estiloLabel(estilo) + '">' + estiloShort(estilo) + '</span>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px">' +
+            '<span class="status-pill ' + risk.state + '">' + statusText(risk.state) + '</span>' +
+            menuBlock +
+          '</div>' +
+        '</div>' +
+
+        '<div class="pos-prices">' +
+          '<div class="pos-price-block">' +
+            '<div class="label">Preço atual' + (q && q.manual ? " (manual)" : "") + '</div>' +
+            '<div class="value">' + (current !== null ? fmtBRL(current) : "—") + '</div>' +
+          '</div>' +
+          '<div class="pos-price-block strike">' +
+            '<div class="label">Strike</div>' +
+            '<div class="value">' + fmtBRL(p.strike) + '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="gauge-wrap">' +
+          '<div class="gauge-strike"></div>' +
+          '<div class="gauge-marker" style="left:' + mPos.toFixed(1) + '%"></div>' +
+        '</div>' +
+
+        '<div class="pos-distance ' + risk.state + '">' +
+          '<span class="risk-dot ' + risk.state + '"></span>' +
+          '<span>' + riskLabel(risk.state, risk.pct, tipo) + '</span>' +
+        '</div>' +
+
+        errorBlock +
+
+        '<div class="pos-spark">' + sparklineSVG(p.ticker, p.strike, tipo) + '</div>' +
+
+        '<div class="pos-meta">' +
+          '<span>' + fmtDateBR(p.vencimento) + '</span>' +
+          '<span class="' + expClass + '">' + expText + '</span>' +
+        '</div>' +
+
+        (totalPremio != null ? '<div class="pos-extra"><span>Prêmio total recebido</span><span>' + fmtBRL(totalPremio) + '</span></div>' : '') +
+        extraNotes +
+      '</article>'
+    );
+  }
+
+  document.addEventListener("click", function () {
+    document.querySelectorAll(".pos-menu-dropdown.open").forEach(function (o) { o.classList.remove("open"); });
+  });
+
+  // CRUD
+  function setTipoUI(tipo) {
+    document.getElementById("opt_posTipo").value = tipo;
+    document.querySelectorAll("#opt_posTipoToggle .tipo-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-tipo") === tipo);
+    });
+  }
+  function setEstiloUI(estilo) {
+    document.getElementById("opt_posEstilo").value = estilo;
+    document.querySelectorAll("#opt_posEstiloToggle .tipo-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-estilo") === estilo);
+    });
+  }
+
+  function openPosModal(id) {
+    var form = document.getElementById("opt_posForm");
+    form.reset();
+    document.getElementById("opt_posId").value = "";
+    setTipoUI("CALL");
+    setEstiloUI("EUROPEIA");
+    if (id) {
+      var p = state.positions.find(function (x) { return x.id === id; });
+      if (p) {
+        document.getElementById("opt_posModalTitle").textContent = "Editar posição";
+        document.getElementById("opt_posId").value = p.id;
+        document.getElementById("opt_posTicker").value = p.ticker;
+        document.getElementById("opt_posStrike").value = toMaskedMoney(p.strike);
+        document.getElementById("opt_posVencimento").value = p.vencimento;
+        document.getElementById("opt_posQtd").value = toMaskedInt(p.quantidade);
+        document.getElementById("opt_posPremio").value = toMaskedMoney(p.premio);
+        document.getElementById("opt_posNotas").value = p.notas || "";
+        setTipoUI(p.tipo || "CALL");
+        setEstiloUI(p.estilo || "EUROPEIA");
+      }
+    } else {
+      document.getElementById("opt_posModalTitle").textContent = "Nova posição";
+    }
+    document.getElementById("opt_posModalOverlay").classList.add("open");
+    document.getElementById("opt_posTicker").focus();
+  }
+  function closePosModal() { document.getElementById("opt_posModalOverlay").classList.remove("open"); }
+
+  document.getElementById("opt_addBtn").addEventListener("click", function () { openPosModal(); });
+  document.getElementById("opt_posCancelBtn").addEventListener("click", closePosModal);
+  document.getElementById("opt_posModalOverlay").addEventListener("click", function (e) {
+    if (e.target === this) closePosModal();
+  });
+
+  document.querySelectorAll("#opt_posTipoToggle .tipo-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setTipoUI(btn.getAttribute("data-tipo"));
+    });
+  });
+  document.querySelectorAll("#opt_posEstiloToggle .tipo-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      setEstiloUI(btn.getAttribute("data-estilo"));
+    });
+  });
+
+  document.getElementById("opt_posForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var id = document.getElementById("opt_posId").value || uid();
+    var ticker = document.getElementById("opt_posTicker").value.trim().toUpperCase();
+    var tipo = document.getElementById("opt_posTipo").value || "CALL";
+    var estilo = document.getElementById("opt_posEstilo").value || "EUROPEIA";
+    var strike = parseNum(document.getElementById("opt_posStrike").value);
+    var vencimento = document.getElementById("opt_posVencimento").value;
+    var quantidade = parseNum(document.getElementById("opt_posQtd").value);
+    var premio = parseNum(document.getElementById("opt_posPremio").value);
+    var notas = document.getElementById("opt_posNotas").value.trim();
+
+    if (!ticker || strike === null || !vencimento) {
+      showToast("Preencha ticker, strike e vencimento.");
+      return;
+    }
+
+    var existingIdx = state.positions.findIndex(function (x) { return x.id === id; });
+    var pos = {
+      id: id, ticker: ticker, tipo: tipo, estilo: estilo, strike: strike,
+      vencimento: vencimento, quantidade: quantidade, premio: premio, notas: notas
+    };
+
+    if (existingIdx >= 0) state.positions[existingIdx] = pos;
+    else state.positions.push(pos);
+
+    savePositions();
+    closePosModal();
+    showToast(existingIdx >= 0 ? "Posição atualizada." : "Posição adicionada.");
+    refreshQuotes();
+  });
+
+  function deletePosition(id) {
+    showConfirm({
+      title: "Remover posição",
+      message: "Remover esta posição do radar?",
+      okText: "Remover",
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      state.positions = state.positions.filter(function (x) { return x.id !== id; });
+      savePositions();
+      render();
+      showToast("Posição removida.");
+    });
+  }
+
+  document.getElementById("opt_clearBtn").addEventListener("click", function () {
+    if (state.positions.length === 0) {
+      showToast("Não há posições para limpar.");
+      return;
+    }
+    showConfirm({
+      title: "Limpar todas",
+      message: "Apagar TODAS as " + state.positions.length + " posições?\nIsso não pode ser desfeito (exporte antes se precisar).",
+      okText: "Apagar tudo",
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      state.positions = [];
+      savePositions();
+      render();
+      showToast("Todas as posições foram removidas.");
+    });
+  });
+
+  // Excel
+  function exportExcel() {
+    if (state.positions.length === 0) {
+      showToast("Nenhuma posição para exportar.");
+      return;
+    }
+    if (typeof XLSX === "undefined") {
+      showToast("Biblioteca Excel não carregou. Verifique a conexão.");
+      return;
+    }
+    var rows = state.positions.map(function (p) {
+      return {
+        "Ticker": p.ticker,
+        "Tipo": p.tipo || "CALL",
+        "Estilo": p.estilo || "EUROPEIA",
+        "Strike": p.strike,
+        "Vencimento": p.vencimento,
+        "Quantidade": p.quantidade != null ? p.quantidade : "",
+        "Premio": p.premio != null ? p.premio : "",
+        "Notas": p.notas || ""
+      };
+    });
+    var ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [
+      { wch: 12 }, { wch: 8 }, { wch: 12 }, { wch: 10 }, { wch: 12 },
+      { wch: 12 }, { wch: 10 }, { wch: 30 }
+    ];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Posições");
+    var fname = "radar-exercicio-" + todayISO() + ".xlsx";
+    XLSX.writeFile(wb, fname);
+    showToast("Excel exportado: " + fname);
+  }
+
+  function importExcel(file) {
+    if (!file) return;
+    if (typeof XLSX === "undefined") {
+      showToast("Biblioteca Excel não carregou. Verifique a conexão.");
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, { type: "array", cellDates: true });
+        var sheet = wb.Sheets[wb.SheetNames[0]];
+        var json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        if (!json.length) {
+          showToast("Planilha vazia.");
+          return;
+        }
+
+        function findKey(row, candidates) {
+          var keys = Object.keys(row);
+          for (var i = 0; i < candidates.length; i++) {
+            var c = candidates[i].toLowerCase().replace(/\s/g, "");
+            for (var j = 0; j < keys.length; j++) {
+              if (keys[j].toLowerCase().replace(/\s/g, "") === c) return keys[j];
+            }
+          }
+          return null;
+        }
+
+        var sample = json[0];
+        var kTicker = findKey(sample, ["Ticker", "ticker", "Ativo", "Codigo"]);
+        var kTipo   = findKey(sample, ["Tipo", "tipo", "Type", "Opcao", "Opção"]);
+        var kEstilo = findKey(sample, ["Estilo", "estilo", "Style", "Exercicio", "Exercício"]);
+        var kStrike = findKey(sample, ["Strike", "strike", "Preço de exercício", "Preco"]);
+        var kVenc   = findKey(sample, ["Vencimento", "vencimento", "Data", "Expiry", "Expiration"]);
+        var kQtd    = findKey(sample, ["Quantidade", "quantidade", "Qtd", "Qty"]);
+        var kPremio = findKey(sample, ["Premio", "Prêmio", "premio", "Premium"]);
+        var kNotas  = findKey(sample, ["Notas", "notas", "Obs", "Observação", "Notes"]);
+
+        if (!kTicker || !kStrike || !kVenc) {
+          showToast("Colunas obrigatórias: Ticker, Strike, Vencimento.");
+          return;
+        }
+
+        var imported = [];
+        var skipped = 0;
+
+        json.forEach(function (row) {
+          var ticker = String(row[kTicker] || "").trim().toUpperCase();
+          var strike = parseNum(row[kStrike]);
+          var venc = row[kVenc];
+          var tipoRaw = kTipo ? String(row[kTipo] || "").trim().toUpperCase() : "CALL";
+          var tipo = (tipoRaw === "PUT" || tipoRaw.indexOf("PUT") !== -1) ? "PUT" : "CALL";
+          var estiloRaw = kEstilo ? String(row[kEstilo] || "").trim().toUpperCase() : "EUROPEIA";
+          var estilo = (estiloRaw.indexOf("AMER") !== -1) ? "AMERICANA" : "EUROPEIA";
+
+          if (venc instanceof Date) {
+            venc = venc.getFullYear() + "-" +
+              String(venc.getMonth() + 1).padStart(2, "0") + "-" +
+              String(venc.getDate()).padStart(2, "0");
+          } else if (typeof venc === "number") {
+            var d = XLSX.SSF.parse_date_code(venc);
+            if (d) {
+              venc = d.y + "-" + String(d.m).padStart(2, "0") + "-" + String(d.d).padStart(2, "0");
+            }
+          } else {
+            venc = String(venc || "").trim();
+            var m = venc.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+            if (m) venc = m[3] + "-" + m[2].padStart(2, "0") + "-" + m[1].padStart(2, "0");
+          }
+
+          if (!ticker || strike === null || !venc) {
+            skipped++;
+            return;
+          }
+
+          imported.push({
+            id: uid(),
+            ticker: ticker,
+            tipo: tipo,
+            estilo: estilo,
+            strike: strike,
+            vencimento: venc,
+            quantidade: kQtd ? parseNum(row[kQtd]) : null,
+            premio: kPremio ? parseNum(row[kPremio]) : null,
+            notas: kNotas ? String(row[kNotas] || "").trim() : ""
+          });
+        });
+
+        if (imported.length === 0) {
+          showToast("Nenhuma linha válida encontrada." + (skipped ? " (" + skipped + " ignoradas)" : ""));
+          return;
+        }
+
+        showConfirm({
+          title: "Importar Excel",
+          message: "Foram encontradas " + imported.length + " posição(ões) válidas.\n\nSubstituir as atuais ou adicionar às existentes?",
+          okText: "Substituir",
+          cancelText: "Adicionar"
+        }).then(function (choice) {
+          if (choice === null) return;
+          if (choice === true) {
+            state.positions = imported;
+          } else {
+            state.positions = state.positions.concat(imported);
+          }
+          savePositions();
+          render();
+          refreshQuotes();
+          showToast(imported.length + " posição(ões) importada(s)." + (skipped ? " " + skipped + " ignorada(s)." : ""));
+        });
+      } catch (err) {
+        console.error(err);
+        showToast("Erro ao ler o arquivo: " + (err.message || "formato inválido"));
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  document.getElementById("opt_exportBtn").addEventListener("click", exportExcel);
+  document.getElementById("opt_importBtn").addEventListener("click", function () {
+    document.getElementById("opt_importFile").click();
+  });
+  document.getElementById("opt_importFile").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (file) importExcel(file);
+    e.target.value = "";
+  });
+
+  // Settings
+  document.getElementById("opt_settingsBtn").addEventListener("click", function () {
+    document.getElementById("opt_apiToken").value = state.settings.token || "";
+    document.getElementById("opt_apiToken").type = "password";
+    document.getElementById("opt_eyeIconOpen").style.display = "";
+    document.getElementById("opt_eyeIconClosed").style.display = "none";
+    document.getElementById("opt_settingsModalOverlay").classList.add("open");
+  });
+  document.getElementById("opt_toggleTokenBtn").addEventListener("click", function () {
+    var input = document.getElementById("opt_apiToken");
+    var hidden = input.type === "password";
+    input.type = hidden ? "text" : "password";
+    document.getElementById("opt_eyeIconOpen").style.display = hidden ? "none" : "";
+    document.getElementById("opt_eyeIconClosed").style.display = hidden ? "" : "none";
+  });
+  document.getElementById("opt_settingsCancelBtn").addEventListener("click", function () {
+    document.getElementById("opt_settingsModalOverlay").classList.remove("open");
+  });
+  document.getElementById("opt_settingsModalOverlay").addEventListener("click", function (e) {
+    if (e.target === this) this.classList.remove("open");
+  });
+  document.getElementById("opt_settingsSaveBtn").addEventListener("click", function () {
+    state.settings.token = document.getElementById("opt_apiToken").value.trim();
+    saveSettings();
+    document.getElementById("opt_settingsModalOverlay").classList.remove("open");
+    showToast("Configurações salvas.");
+    refreshQuotes();
+  });
+
+  document.getElementById("opt_refreshBtn").addEventListener("click", function () { refreshQuotes(); });
+
+  // Init
+  loadState();
+  document.body.classList.remove("light");
+  render();
+  refreshQuotes();
+})();
+
+</script>
+
+<script>
+/* ===== AÇÕES / GRAHAM ===== */
+
+(function () {
+  "use strict";
+
+  var LS_POSITIONS = "radarGraham.positions";
+  var LS_SETTINGS  = "radarGraham.settings";
+  var TEST_TICKERS = ["PETR4", "VALE3", "MGLU3", "ITUB4"];
+
+  var state = {
+    positions: [],
+    settings: { token: "" },
+    quotes: {},
+    lastUpdated: null
+  };
+
+  function loadState() {
+    try { state.positions = JSON.parse(localStorage.getItem(LS_POSITIONS) || "[]"); } catch (e) { state.positions = []; }
+    try { state.settings  = JSON.parse(localStorage.getItem(LS_SETTINGS) || "{}"); } catch (e) { state.settings = {}; }
+    if (!state.settings.token) state.settings.token = "";
+    if (!state.settings.bolsaiKey) state.settings.bolsaiKey = "";
+  }
+  function savePositions() { localStorage.setItem(LS_POSITIONS, JSON.stringify(state.positions)); }
+  function saveSettings()  { localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings)); }
+
+  function uid() { return "g" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function parseNum(str) {
+    if (str === null || str === undefined || str === "") return null;
+    if (typeof str === "number") return isNaN(str) ? null : str;
+    var s = String(str).trim();
+    if (!s) return null;
+    if (s.indexOf(",") !== -1) s = s.replace(/\./g, "").replace(",", ".");
+    var n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  }
+  function fmtBRL(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  }
+  function fmtPct(n) {
+    if (n === null || n === undefined || isNaN(n)) return "—";
+    var sign = n > 0 ? "+" : "";
+    return sign + n.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+  }
+  function toMaskedMoney(n) {
+    if (n === null || n === undefined || isNaN(n)) return "";
+    return n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function applyMoneyMask(el) {
+    el.addEventListener("input", function () {
+      var digits = el.value.replace(/\D/g, "");
+      if (!digits) { el.value = ""; return; }
+      el.value = (parseInt(digits, 10) / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    });
+  }
+  applyMoneyMask(document.getElementById("gj_posLpa"));
+  applyMoneyMask(document.getElementById("gj_posVpa"));
+
+  function escapeHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // Número de Graham: √(22.5 × LPA × VPA)
+  function grahamFair(lpa, vpa) {
+    if (lpa === null || vpa === null || lpa <= 0 || vpa <= 0) return null;
+    return Math.sqrt(22.5 * lpa * vpa);
+  }
+
+  // pct = (preço - justo) / justo × 100
+  // negativo = desconto (barato) | positivo = prêmio (caro)
+  function riskState(price, fair) {
+    if (price === null || price === undefined || !fair) return { state: "unknown", pct: null };
+    var pct = ((price - fair) / fair) * 100;
+    var s;
+    if (pct >= 5) s = "danger";       // 5%+ acima do justo
+    else if (pct >= -5) s = "warn";   // faixa ±5%
+    else s = "safe";                  // 5%+ abaixo = desconto
+    return { state: s, pct: pct };
+  }
+
+  function riskLabel(risk, pct) {
+    if (risk === "unknown") return "Aguardando cotação";
+    if (pct === null) return "";
+    var abs = Math.abs(pct).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    if (risk === "danger") return "Acima do valor justo (" + fmtPct(pct) + ")";
+    if (risk === "warn") {
+      if (pct >= 0) return "Próximo do valor justo — prêmio " + abs + "%";
+      return "Próximo do valor justo — desconto " + abs + "%";
+    }
+    return "Abaixo do valor justo — desconto " + abs + "%";
+  }
+
+  function statusText(risk) {
+    if (risk === "danger") return "Cara";
+    if (risk === "warn") return "Neutra";
+    if (risk === "safe") return "Desconto";
+    return "—";
+  }
+
+  // Marcador: justo no centro; preço mapeado em torno
+  function markerPos(price, fair) {
+    if (price === null || !fair) return 50;
+    var min = fair * 0.50, max = fair * 1.50;
+    return Math.max(2, Math.min(98, ((price - min) / (max - min)) * 100));
+  }
+
+  var toastEl = document.getElementById("gj_toast");
+  var toastTimer = null;
+  function showToast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 2800);
+  }
+
+  function showConfirm(opts) {
+    return new Promise(function (resolve) {
+      var overlay = document.getElementById("gj_confirmModalOverlay");
+      var okBtn = document.getElementById("gj_confirmOkBtn");
+      var cancelBtn = document.getElementById("gj_confirmCancelBtn");
+      document.getElementById("gj_confirmTitle").textContent = opts.title || "Confirmar";
+      document.getElementById("gj_confirmMsg").textContent = opts.message || "";
+      okBtn.textContent = opts.okText || "OK";
+      cancelBtn.textContent = opts.cancelText || "Cancelar";
+      okBtn.classList.toggle("btn-confirm-danger", !!opts.danger);
+      okBtn.classList.toggle("btn-primary", !opts.danger);
+
+      function cleanup(result) {
+        overlay.classList.remove("open");
+        okBtn.removeEventListener("click", onOk);
+        cancelBtn.removeEventListener("click", onCancel);
+        overlay.removeEventListener("click", onOverlay);
+        resolve(result);
+      }
+      function onOk() { cleanup(true); }
+      function onCancel() { cleanup(false); }
+      function onOverlay(e) { if (e.target === overlay) cleanup(null); }
+
+      okBtn.addEventListener("click", onOk);
+      cancelBtn.addEventListener("click", onCancel);
+      overlay.addEventListener("click", onOverlay);
+      overlay.classList.add("open");
+      okBtn.focus();
+    });
+  }
+
+  function extractFundamentals(item) {
+    var lpa = null, vpa = null;
+    if (!item) return { lpa: null, vpa: null };
+    var dks = item.defaultKeyStatistics || {};
+
+    if (typeof item.earningsPerShare === "number") lpa = item.earningsPerShare;
+    else if (typeof dks.trailingEps === "number") lpa = dks.trailingEps;
+    else if (typeof dks.earningsPerShare === "number") lpa = dks.earningsPerShare;
+
+    if (typeof dks.bookValue === "number") vpa = dks.bookValue;
+    else if (typeof item.bookValue === "number") vpa = item.bookValue;
+
+    // Deriva VPA via preço / P/VPA quando bookValue não vem
+    if (vpa === null || vpa === undefined) {
+      var price = typeof item.regularMarketPrice === "number" ? item.regularMarketPrice : null;
+      var ptb = typeof dks.priceToBook === "number" ? dks.priceToBook : null;
+      if (price !== null && ptb !== null && ptb > 0) vpa = price / ptb;
+    }
+    return { lpa: lpa, vpa: vpa };
+  }
+
+  function brapiHeaders() {
+    var h = { Accept: "application/json" };
+    if (state.settings.token) {
+      h["Authorization"] = "Bearer " + state.settings.token.trim();
+    }
+    return h;
+  }
+
+  function brapiUrl(ticker, withModules) {
+    var url = "https://brapi.dev/api/quote/" + encodeURIComponent(ticker);
+    var qs = [];
+    if (withModules) qs.push("modules=defaultKeyStatistics");
+    if (state.settings.token) qs.push("token=" + encodeURIComponent(state.settings.token.trim()));
+    if (qs.length) url += "?" + qs.join("&");
+    return url;
+  }
+
+  function parseQuoteResponse(data) {
+    if (!data || !data.results || !data.results[0]) throw new Error("sem dados");
+    var item = data.results[0];
+    if (typeof item.regularMarketPrice !== "number") throw new Error("sem preço");
+    var fund = extractFundamentals(item);
+    return {
+      price: item.regularMarketPrice,
+      lpa: fund.lpa,
+      vpa: fund.vpa,
+      error: null
+    };
+  }
+
+  function statusError(status, ticker) {
+    if (status === 401) {
+      return TEST_TICKERS.indexOf(ticker) === -1
+        ? "token inválido ou ausente"
+        : "token inválido";
+    }
+    if (status === 403) return "seu plano brapi não libera este recurso (403)";
+    if (status === 404) return "ticker não encontrado";
+    if (status === 402) return "limite mensal da brapi atingido";
+    if (status === 429) return "muitas requisições — aguarde um minuto";
+    return "erro HTTP " + status;
+  }
+
+  function fetchBrapiQuote(ticker) {
+    return fetchBrapiBatch([ticker]).then(function (map) {
+      return map[ticker] || { price: null, lpa: null, vpa: null, error: "sem dados brapi" };
+    });
+  }
+
+  function isNetworkError(err) {
+    var msg = (err && err.message) ? err.message : String(err || "");
+    return /failed to fetch|networkerror|load failed|cors|network error/i.test(msg);
+  }
+
+  // fetch JSON com fallback de proxy (file:// e CORS)
+  function fetchJson(url, headers) {
+    headers = headers || { Accept: "application/json" };
+    function tryOnce(u, h) {
+      return fetch(u, { headers: h || headers, mode: "cors" }).then(function (r) {
+        return r.text().then(function (text) {
+          var data = null;
+          try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+          // Resposta de proxy pago/bloqueado
+          if (data && (data.error === "keyless_legacy_url" || data.success === false)) {
+            var pe = new Error("proxy bloqueado — use http://localhost");
+            pe.status = data.status || 403;
+            pe.data = data;
+            throw pe;
+          }
+          return { ok: r.ok, status: r.status, data: data, text: text };
+        });
+      });
+    }
+    return tryOnce(url, headers).catch(function (err) {
+      if (!isNetworkError(err)) throw err;
+      // Só allorigins (corsproxy.io exige API key paga → keyless_legacy_url)
+      var p2 = "https://api.allorigins.win/raw?url=" + encodeURIComponent(url);
+      return tryOnce(p2, { Accept: "application/json" });
+    }).then(function (res) {
+      if (!res.ok) {
+        var err = new Error("HTTP " + res.status);
+        err.status = res.status;
+        err.data = res.data;
+        throw err;
+      }
+      return res.data;
+    });
+  }
+
+  function parseBrapiResults(data, list) {
+    var map = {};
+    list.forEach(function (t) {
+      map[t] = { price: null, lpa: null, vpa: null, error: "ticker sem retorno" };
+    });
+    var results = (data && data.results) ? data.results : [];
+    results.forEach(function (item) {
+      if (!item) return;
+      var sym = String(item.symbol || item.requestedSymbol || "").toUpperCase();
+      if (!sym) return;
+      var node = item.data && typeof item.data === "object" ? Object.assign({}, item, item.data) : item;
+      try {
+        var px = node.regularMarketPrice;
+        if (typeof px !== "number") {
+          map[sym] = { price: null, lpa: null, vpa: null, error: "sem preço" };
+          return;
+        }
+        var fund = extractFundamentals(node);
+        map[sym] = { price: px, lpa: fund.lpa, vpa: fund.vpa, error: null };
+      } catch (e) {
+        map[sym] = { price: null, lpa: null, vpa: null, error: e.message || "parse" };
+      }
+    });
+    return map;
+  }
+
+  // GET sem headers customizados (evita preflight / NetworkError no browser)
+  function fetchBrapiSimple(url) {
+    return fetch(url, { method: "GET", mode: "cors", cache: "no-store" }).then(function (r) {
+      return r.text().then(function (text) {
+        var data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) {}
+        if (!r.ok) {
+          var err = new Error((data && (data.message || data.error)) || ("HTTP " + r.status));
+          err.status = r.status;
+          err.data = data;
+          throw err;
+        }
+        return data;
+      });
+    });
+  }
+
+  function fetchBrapiBatch(tickers) {
+    var list = tickers.filter(Boolean).map(function (t) { return String(t).toUpperCase(); });
+    if (list.length === 0) return Promise.resolve({});
+    var token = (state.settings.token || "").trim().replace(/^["']|["']$/g, "");
+
+    function buildLegacyUrl(syms, withModules) {
+      var u = "https://brapi.dev/api/quote/" + syms.map(encodeURIComponent).join(",");
+      var qs = [];
+      if (withModules) qs.push("modules=defaultKeyStatistics");
+      if (token) qs.push("token=" + encodeURIComponent(token));
+      if (qs.length) u += "?" + qs.join("&");
+      return u;
+    }
+    function buildV2Url(syms) {
+      var u = "https://brapi.dev/api/v2/stocks/quote?symbols=" + syms.map(encodeURIComponent).join(",");
+      if (token) u += "&token=" + encodeURIComponent(token);
+      return u;
+    }
+    function buildStatsUrl(syms) {
+      var u = "https://brapi.dev/api/v2/stocks/statistics?symbols=" + syms.map(encodeURIComponent).join(",");
+      if (token) u += "&token=" + encodeURIComponent(token);
+      return u;
+    }
+
+    function enrichVpaFromStats(t, base) {
+      // VPA (bookValue) vem em modules/statistics — cotação simples não traz
+      if (!base) base = { price: null, lpa: null, vpa: null, error: "sem dados" };
+      if (base.vpa != null && base.vpa > 0) return Promise.resolve(base);
+      return fetchBrapiSimple(buildStatsUrl([t]))
+        .then(function (data) {
+          var results = (data && data.results) || [];
+          var item = results[0];
+          if (!item) return base;
+          var node = item.data && typeof item.data === "object" ? item.data : item;
+          if (typeof node.bookValue === "number" && node.bookValue > 0) base.vpa = node.bookValue;
+          else if (typeof node.priceToBook === "number" && node.priceToBook > 0 && base.price != null)
+            base.vpa = base.price / node.priceToBook;
+          if ((base.lpa == null || base.lpa <= 0) && typeof node.trailingEps === "number")
+            base.lpa = node.trailingEps;
+          if (base.price != null) base.error = null;
+          return base;
+        })
+        .catch(function () { return base; });
+    }
+
+    // 1 ticker por vez
+    var map = {};
+    return list.reduce(function (chain, t, idx) {
+      return chain.then(function () {
+        function tryOne(url) {
+          return fetchBrapiSimple(url).then(function (data) {
+            return parseBrapiResults(data, [t])[t];
+          });
+        }
+        // módulos → simples → v2 → statistics (VPA)
+        return tryOne(buildLegacyUrl([t], true))
+          .catch(function () { return tryOne(buildLegacyUrl([t], false)); })
+          .catch(function () { return tryOne(buildV2Url([t])); })
+          .then(function (base) { return enrichVpaFromStats(t, base); })
+          .then(function (final) { map[t] = final; })
+          .catch(function (err) {
+            var msg = (err && err.message) || "falha brapi";
+            if (isNetworkError(err)) msg = "rede/CORS brapi";
+            else if (err && err.status) msg = statusError(err.status, t);
+            map[t] = { price: null, lpa: null, vpa: null, error: msg };
+          })
+          .then(function () { return delay(idx < list.length - 1 ? 180 : 0); });
+      });
+    }, Promise.resolve()).then(function () { return map; });
+  }
+
+  function delay(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  function mergeQuote(prev, next) {
+    prev = prev || {};
+    next = next || {};
+    var out = Object.assign({}, prev);
+    // preço: só sobrescreve se veio valor válido
+    if (next.price !== null && next.price !== undefined && !isNaN(next.price)) {
+      out.price = next.price;
+      out.error = null;
+      out.manual = false;
+    } else if (prev.price != null && !prev.error) {
+      // mantém preço anterior; anota falha só se não havia preço
+      out.error = null;
+    } else if (next.error) {
+      out.error = next.error;
+    }
+    ["lpa", "vpa", "pl", "dy", "netDebtEquity", "netDebtEbitda", "netMargin", "roe", "evEbitda"].forEach(function (k) {
+      if (next[k] !== null && next[k] !== undefined && !isNaN(next[k])) out[k] = next[k];
+    });
+    return out;
+  }
+
+  function numFlex(v) {
+    if (v === null || v === undefined || v === "") return null;
+    if (typeof v === "number") return isNaN(v) ? null : v;
+    var s = String(v).trim().replace(/[R$\s]/gi, "");
+    if (!s) return null;
+    // "32,15" ou "1.234,56" (BR) vs "32.15"
+    if (s.indexOf(",") !== -1) s = s.replace(/\./g, "").replace(",", ".");
+    var n = parseFloat(s);
+    return isNaN(n) ? null : n;
+  }
+
+  function parseBolsaiData(data) {
+    if (!data || typeof data !== "object") throw new Error("resposta bolsai inválida");
+    if (data.error) throw new Error(typeof data.error === "string" ? data.error : "erro bolsai");
+
+    var lpa = numFlex(data.lpa != null ? data.lpa : data.LPA);
+    var vpa = numFlex(
+      data.vpa != null ? data.vpa :
+      data.VPA != null ? data.VPA :
+      data.book_value != null ? data.book_value :
+      data.bookValue != null ? data.bookValue :
+      null
+    );
+    var price = numFlex(
+      data.close_price != null ? data.close_price :
+      data.preco != null ? data.preco :
+      data.price != null ? data.price :
+      null
+    );
+
+    // Deriva VPA se vier P/VP e preço
+    if (vpa === null && price !== null) {
+      var pvp = numFlex(data.pvp != null ? data.pvp : data.price_to_book);
+      if (pvp !== null && pvp > 0) vpa = price / pvp;
+    }
+    // Deriva VPA de equity / shares
+    if (vpa === null) {
+      var equity = numFlex(data.equity != null ? data.equity : data.patrimonio_liquido);
+      var shares = numFlex(data.shares_outstanding != null ? data.shares_outstanding : data.numero_acoes);
+      if (equity !== null && shares !== null && shares > 0) vpa = equity / shares;
+    }
+
+    return {
+      lpa: lpa,
+      vpa: vpa,
+      price: price,
+      error: null,
+      // indicadores extras (bolsai)
+      pl: numFlex(data.pl),
+      dy: numFlex(data.dividend_yield != null ? data.dividend_yield : data.dy),
+      netDebtEquity: numFlex(data.net_debt_equity != null ? data.net_debt_equity : data.divida_liquida_patrimonio),
+      netDebtEbitda: numFlex(data.net_debt_ebitda != null ? data.net_debt_ebitda : data.divida_liquida_ebitda),
+      netMargin: numFlex(data.net_margin != null ? data.net_margin : data.margem_liquida),
+      roe: numFlex(data.roe),
+      evEbitda: numFlex(data.ev_ebitda != null ? data.ev_ebitda : data.evEbitda)
+    };
+  }
+
+  function bolsaiHttpError(status) {
+    if (status === 401 || status === 403) return "chave bolsai inválida ou sem permissão";
+    if (status === 404) return "ticker não encontrado na bolsai";
+    if (status === 429) return "limite diário bolsai (~200/dia)";
+    return "bolsai HTTP " + status;
+  }
+
+  function fetchBolsaiFundamentals(ticker) {
+    var key = (state.settings.bolsaiKey || "").trim().replace(/^["']|["']$/g, "");
+    if (!key) {
+      return Promise.resolve({ lpa: null, vpa: null, price: null, error: "sem chave bolsai (configure em ⚙)" });
+    }
+    // Auth oficial: só header X-API-Key (sem ?api_key= na URL)
+    var directUrl = "https://api.usebolsai.com/api/v1/fundamentals/" + encodeURIComponent(ticker);
+    var headers = { "X-API-Key": key, Accept: "application/json" };
+
+    function parseErr(err) {
+      if (err && err.data && err.data.error) {
+        if (/invalid|inactive|api key/i.test(String(err.data.error))) {
+          return "chave bolsai inválida — cole de novo em ⚙ (sem aspas)";
+        }
+        return String(err.data.error);
+      }
+      if (err && err.status) return bolsaiHttpError(err.status);
+      if (isNetworkError(err)) return "rede/CORS bolsai";
+      return (err && err.message) || "falha bolsai";
+    }
+
+    function handleResponse(r) {
+      return r.text().then(function (text) {
+        var data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) {}
+        if (!r.ok) {
+          var err = new Error("HTTP " + r.status);
+          err.status = r.status;
+          err.data = data;
+          throw err;
+        }
+        return parseBolsaiData(data);
+      });
+    }
+
+    return fetch(directUrl, { headers: headers, mode: "cors" })
+      .then(handleResponse)
+      .catch(function (err) {
+        // 401/403 = chave ou permissão reais — não mascara com proxy
+        if (err && (err.status === 401 || err.status === 403)) {
+          return { lpa: null, vpa: null, price: null, error: parseErr(err) };
+        }
+        if (err && err.status && !isNetworkError(err)) {
+          return { lpa: null, vpa: null, price: null, error: parseErr(err) };
+        }
+        // Sem corsproxy (keyless_legacy_url). Em CORS, peça localhost.
+        return {
+          lpa: null,
+          vpa: null,
+          price: null,
+          error: isNetworkError(err)
+            ? "CORS bolsai — abra via localhost (python -m http.server)"
+            : parseErr(err)
+        };
+      });
+  }
+
+  // Fundamentus: LPA/VPA/cotação confiáveis (fallback definitivo no browser)
+  function fetchFundamentus(ticker) {
+    var papel = String(ticker || "").toUpperCase().replace(/\.SA$/i, "");
+    var pageUrl = "https://www.fundamentus.com.br/detalhes.php?papel=" + encodeURIComponent(papel);
+    var proxied = "https://api.allorigins.win/raw?url=" + encodeURIComponent(pageUrl);
+
+    function parseHtml(html) {
+      if (!html || html.length < 200) throw new Error("fundamentus vazio");
+      var pairs = {};
+      var re = /<span class="txt">([^<]+)<\/span><\/td>\s*<td class="data[^"]*"><span class="txt">([^<]+)<\/span>/gi;
+      var m;
+      while ((m = re.exec(html)) !== null) {
+        var k = m[1].replace(/\s+/g, " ").trim().toUpperCase();
+        // normaliza acentos quebrados
+        k = k.replace(/COTA.*/i, "COTACAO").replace(/^VPA$/i, "VPA").replace(/^LPA$/i, "LPA");
+        if (/^COTA/i.test(m[1].trim())) k = "COTACAO";
+        pairs[k] = m[2].trim();
+      }
+      var price = numFlex(pairs["COTACAO"]);
+      var lpa = numFlex(pairs["LPA"]);
+      var vpa = numFlex(pairs["VPA"]);
+      var pl = numFlex(pairs["P/L"]);
+      var dy = numFlex((pairs["DIV. YIELD"] || pairs["DIV YIELD"] || "").replace("%", ""));
+      var roe = numFlex((pairs["ROE"] || "").replace("%", ""));
+      var netMargin = numFlex((pairs["MARG. LÍQUIDA"] || pairs["MARG. LIQUIDA"] || pairs["MARG. L�QUIDA"] || "").replace("%", ""));
+      if (price === null && lpa === null && vpa === null) throw new Error("fundamentus sem dados para " + papel);
+      return {
+        price: price, lpa: lpa, vpa: vpa, error: null,
+        pl: pl, dy: dy, roe: roe, netMargin: netMargin,
+        netDebtEquity: numFlex(pairs["DÍV LÍQ / PATRIM"] || pairs["DIV LIQ / PATRIM"] || pairs["D�V L�Q / PATRIM"]),
+        netDebtEbitda: null,
+        evEbitda: numFlex(pairs["EV / EBITDA"]),
+        source: "fundamentus"
+      };
+    }
+
+    return fetch(proxied, { method: "GET", mode: "cors", cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("fundamentus HTTP " + r.status);
+        return r.text();
+      })
+      .then(parseHtml)
+      .catch(function (err) {
+        // tenta direto (alguns ambientes permitem)
+        return fetch(pageUrl, { method: "GET", mode: "cors", cache: "no-store" })
+          .then(function (r) {
+            if (!r.ok) throw new Error("fundamentus HTTP " + r.status);
+            return r.text();
+          })
+          .then(parseHtml)
+          .catch(function (err2) {
+            return {
+              price: null, lpa: null, vpa: null,
+              error: (err && err.message) || (err2 && err2.message) || "fundamentus falhou"
+            };
+          });
+      });
+  }
+
+  function pickPositive() {
+    for (var i = 0; i < arguments.length; i++) {
+      var v = arguments[i];
+      if (v !== null && v !== undefined && !isNaN(v) && v > 0) return v;
+    }
+    return null;
+  }
+  function pickAny() {
+    for (var i = 0; i < arguments.length; i++) {
+      var v = arguments[i];
+      if (v !== null && v !== undefined && !isNaN(v)) return v;
+    }
+    return null;
+  }
+
+  // Prioridade: preço brapi → fundamentus → bolsai
+  // LPA/VPA: fundamentus → bolsai → brapi (fundamentus é o mais estável p/ VPA no browser)
+  function combineSources(brapi, bolsai, fund) {
+    brapi = brapi || {};
+    bolsai = bolsai || {};
+    fund = fund || {};
+
+    var price = pickPositive(brapi.price, fund.price, bolsai.price);
+    var lpa = pickPositive(fund.lpa, bolsai.lpa, brapi.lpa);
+    var vpa = pickPositive(fund.vpa, bolsai.vpa, brapi.vpa);
+
+    if (price === null && lpa === null && vpa === null) {
+      var msg = brapi.error || fund.error || bolsai.error || "sem dados";
+      return { price: null, lpa: null, vpa: null, error: msg };
+    }
+    return {
+      price: price,
+      lpa: lpa,
+      vpa: vpa,
+      error: null,
+      warning: (vpa === null ? "VPA ausente — preencha manualmente" : null),
+      pl: pickAny(fund.pl, bolsai.pl),
+      dy: pickAny(fund.dy, bolsai.dy),
+      netDebtEquity: pickAny(fund.netDebtEquity, bolsai.netDebtEquity),
+      netDebtEbitda: pickAny(bolsai.netDebtEbitda),
+      netMargin: pickAny(fund.netMargin, bolsai.netMargin),
+      roe: pickAny(fund.roe, bolsai.roe),
+      evEbitda: pickAny(fund.evEbitda, bolsai.evEbitda)
+    };
+  }
+
+  function fetchQuote(ticker) {
+    // brapi + fundamentus em paralelo; bolsai em paralelo (pode falhar por CORS — ok)
+    return Promise.all([
+      fetchBrapiQuote(ticker),
+      fetchFundamentus(ticker),
+      fetchBolsaiFundamentals(ticker)
+    ]).then(function (all) {
+      return combineSources(all[0], all[2], all[1]);
+    });
+  }
+
+  function applyFundToPosition(ticker, res) {
+    if (!res || res.error) return false;
+    var changed = false;
+    state.positions.forEach(function (p) {
+      if (p.ticker !== ticker) return;
+      if (res.lpa != null && res.lpa > 0 && p.lpa !== res.lpa) { p.lpa = res.lpa; changed = true; }
+      if (res.vpa != null && res.vpa > 0 && p.vpa !== res.vpa) { p.vpa = res.vpa; changed = true; }
+      var f = Object.assign({}, p.fund || {});
+      var keys = ["pl", "dy", "netDebtEquity", "netDebtEbitda", "netMargin", "roe", "evEbitda"];
+      keys.forEach(function (k) {
+        if (res[k] !== null && res[k] !== undefined && !isNaN(res[k])) {
+          if (f[k] !== res[k]) changed = true;
+          f[k] = res[k];
+        }
+      });
+      p.fund = f;
+    });
+    return changed;
+  }
+
+  function refreshQuotes() {
+    var tickers = Array.from(new Set(state.positions.map(function (p) { return p.ticker; })));
+    if (tickers.length === 0) { render(); return Promise.resolve(); }
+    var btn = document.getElementById("gj_refreshBtn");
+    btn.disabled = true;
+    var okPrice = 0, failPrice = 0;
+
+    // Só cotações (brapi). Bolsai não tem CORS no browser — não bloqueia o Atualizar.
+    var i = 0;
+    return tickers.reduce(function (chain, t) {
+      return chain.then(function () {
+        i++;
+        btn.textContent = "Cotação " + i + "/" + tickers.length;
+        return fetchBrapiBatch([t]).then(function (map) {
+          var b = map[t] || { price: null, error: "falha" };
+          function apply(res) {
+            if (res && res.price != null) {
+              state.quotes[t] = mergeQuote(state.quotes[t], res);
+              okPrice++;
+            } else {
+              failPrice++;
+              if (!state.quotes[t] || state.quotes[t].price == null) {
+                state.quotes[t] = mergeQuote(state.quotes[t], res || b);
+              }
+            }
+          }
+          if (b.price != null) {
+            apply(b);
+            return null;
+          }
+          // Fallback: Fundamentus (cotação + reforço LPA/VPA se faltar)
+          return fetchFundamentus(t).then(function (f) {
+            if (f && !f.error) {
+              apply({
+                price: f.price,
+                lpa: f.lpa,
+                vpa: f.vpa,
+                error: null
+              });
+              applyFundToPosition(t, f);
+            } else {
+              apply(b);
+            }
+          });
+        }).then(function () {
+          if (i % 2 === 0) render();
+        });
+      });
+    }, Promise.resolve()).then(function () {
+      state.lastUpdated = new Date();
+      btn.disabled = false;
+      btn.textContent = "Atualizar";
+      render();
+      var msg = "Atualizado: " + okPrice + " cotação(ões)";
+      if (failPrice) msg += " · " + failPrice + " falhou";
+      showToast(msg);
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = "Atualizar";
+      showToast("Falha na atualização: " + (err.message || err));
+      render();
+    });
+  }
+
+  function render() {
+    var grid = document.getElementById("gj_grid");
+    var positions = state.positions.slice().sort(function (a, b) {
+      var qa = state.quotes[a.ticker], qb = state.quotes[b.ticker];
+      var fa = grahamFair(a.lpa, a.vpa), fb = grahamFair(b.lpa, b.vpa);
+      var pa = qa && !qa.error ? qa.price : null;
+      var pb = qb && !qb.error ? qb.price : null;
+      var ra = riskState(pa, fa), rb = riskState(pb, fb);
+      var order = { danger: 0, warn: 1, safe: 2, unknown: 3 };
+      return (order[ra.state] || 9) - (order[rb.state] || 9);
+    });
+
+    document.getElementById("gj_statTotal").textContent = positions.length;
+    var discountCount = 0;
+
+    if (positions.length === 0) {
+      grid.innerHTML =
+        '<div class="empty-state">' +
+        "<h2>Nenhuma ação cadastrada</h2>" +
+        "<p>Cadastre ações com LPA e VPA para acompanhar o preço em relação ao valor justo de Graham.</p>" +
+        '<button class="btn btn-primary" id="gj_emptyAddBtn">Nova ação</button>' +
+        "</div>";
+      document.getElementById("gj_emptyAddBtn").addEventListener("click", function () { openPosModal(); });
+    } else {
+      grid.innerHTML = positions.map(function (p) { return cardHTML(p); }).join("");
+    }
+
+    positions.forEach(function (p) {
+      var q = state.quotes[p.ticker];
+      if (q && !q.error) {
+        var fair = grahamFair(p.lpa, p.vpa);
+        var r = riskState(q.price, fair);
+        if (r.state === "safe") discountCount++;
+      }
+    });
+    document.getElementById("gj_statDiscount").textContent = discountCount;
+    document.getElementById("gj_statUpdated").textContent = state.lastUpdated
+      ? state.lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+      : "—";
+
+    grid.querySelectorAll(".pos-menu-btn").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var dd = btn.parentElement.querySelector(".pos-menu-dropdown");
+        document.querySelectorAll(".pos-menu-dropdown.open").forEach(function (o) {
+          if (o !== dd) o.classList.remove("open");
+        });
+        dd.classList.toggle("open");
+      });
+    });
+    grid.querySelectorAll("[data-edit]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openPosModal(btn.getAttribute("data-edit"));
+      });
+    });
+    grid.querySelectorAll("[data-delete]").forEach(function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        deletePosition(btn.getAttribute("data-delete"));
+      });
+    });
+    grid.querySelectorAll("[data-manual]").forEach(function (inp) {
+      inp.addEventListener("click", function (e) { e.stopPropagation(); });
+      inp.addEventListener("change", function () {
+        var ticker = inp.getAttribute("data-manual");
+        var val = parseNum(inp.value);
+        if (val !== null) {
+          state.quotes[ticker] = { price: val, error: null, manual: true };
+          render();
+        }
+      });
+    });
+    grid.querySelectorAll(".pos-card[data-id]").forEach(function (card) {
+      card.addEventListener("click", function (e) {
+        if (e.target.closest(".pos-menu-wrap") || e.target.closest(".pos-error")) return;
+        openExpand(card.getAttribute("data-id"));
+      });
+    });
+  }
+
+  function openExpand(id) {
+    var p = state.positions.find(function (x) { return x.id === id; });
+    if (!p) return;
+    var panel = document.getElementById("gj_expandPanel");
+    panel.innerHTML =
+      '<button type="button" class="expand-close" id="gj_expandCloseBtn" aria-label="Fechar">×</button>' +
+      cardHTML(p, { expanded: true }) +
+      '<div class="expand-actions">' +
+        '<button type="button" class="btn" id="gj_expandEditBtn">Editar</button>' +
+        '<button type="button" class="btn btn-ghost-danger" id="gj_expandDeleteBtn">Remover</button>' +
+      '</div>';
+    document.getElementById("gj_expandOverlay").classList.add("open");
+    document.getElementById("gj_expandCloseBtn").addEventListener("click", closeExpand);
+    document.getElementById("gj_expandEditBtn").addEventListener("click", function () {
+      closeExpand();
+      openPosModal(id);
+    });
+    document.getElementById("gj_expandDeleteBtn").addEventListener("click", function () {
+      closeExpand();
+      deletePosition(id);
+    });
+  }
+  function closeExpand() {
+    document.getElementById("gj_expandOverlay").classList.remove("open");
+  }
+  document.getElementById("gj_expandOverlay").addEventListener("click", function (e) {
+    if (e.target === this) closeExpand();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeExpand();
+  });
+
+  function fmtRatio(n, digits) {
+    if (n === null || n === undefined || isNaN(n)) return null;
+    return n.toLocaleString("pt-BR", { minimumFractionDigits: digits || 2, maximumFractionDigits: digits || 2 });
+  }
+  function fmtPctVal(n) {
+    if (n === null || n === undefined || isNaN(n)) return null;
+    // bolsai pode mandar 0.08 ou 8 para 8%
+    var v = Math.abs(n) <= 1.5 ? n * 100 : n;
+    return v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + "%";
+  }
+  function metaItem(label, value) {
+    if (value === null || value === undefined || value === "") return "";
+    return '<div class="mi"><span>' + label + '</span><span>' + value + '</span></div>';
+  }
+
+  function cardHTML(p, opts) {
+    opts = opts || {};
+    var expanded = !!opts.expanded;
+    var q = state.quotes[p.ticker];
+    var price = q && !q.error ? q.price : null;
+    var fair = grahamFair(p.lpa, p.vpa);
+    var risk = riskState(price, fair);
+    var mPos = markerPos(price, fair);
+    var f = p.fund || {};
+    // preferir fund fresco da última cotação se existir
+    if (q && !q.error) {
+      if (q.pl != null) f.pl = q.pl;
+      if (q.dy != null) f.dy = q.dy;
+      if (q.netDebtEquity != null) f.netDebtEquity = q.netDebtEquity;
+      if (q.netDebtEbitda != null) f.netDebtEbitda = q.netDebtEbitda;
+      if (q.netMargin != null) f.netMargin = q.netMargin;
+      if (q.roe != null) f.roe = q.roe;
+      if (q.evEbitda != null) f.evEbitda = q.evEbitda;
+    }
+
+    var errorBlock = "";
+    if (q && q.error && price === null) {
+      var errShort = String(q.error);
+      if (/rede|cors|network/i.test(errShort)) errShort = "Sem cotação (rede). Tente Atualizar ou preço manual.";
+      errorBlock =
+        '<div class="pos-error"><span>' + escapeHtml(errShort) + '</span>' +
+        (expanded ? "" : '<input type="text" placeholder="preço manual" data-manual="' + escapeHtml(p.ticker) + '">') +
+        "</div>";
+    }
+
+    var menuBlock = expanded ? "" : (
+      '<div class="pos-menu-wrap">' +
+        '<button class="pos-menu-btn" type="button">⋮</button>' +
+        '<div class="pos-menu-dropdown">' +
+          '<button type="button" data-edit="' + p.id + '">Editar</button>' +
+          '<button type="button" class="danger" data-delete="' + p.id + '">Remover</button>' +
+        '</div>' +
+      '</div>'
+    );
+
+    // Indicadores: LPA/VPA uma vez + extras da bolsai (só os que existirem)
+    var metaHtml =
+      metaItem("LPA", fmtBRL(p.lpa)) +
+      metaItem("VPA", fmtBRL(p.vpa)) +
+      metaItem("P/L", fmtRatio(f.pl)) +
+      metaItem("DY", fmtPctVal(f.dy)) +
+      metaItem("ROE", fmtPctVal(f.roe)) +
+      metaItem("Marg. líq.", fmtPctVal(f.netMargin)) +
+      metaItem("EV/EBITDA", fmtRatio(f.evEbitda)) +
+      metaItem("Dív.líq./PL", fmtRatio(f.netDebtEquity)) +
+      metaItem("Dív.líq./EBITDA", fmtRatio(f.netDebtEbitda));
+
+    var extras = "";
+    if (expanded && p.notas) {
+      extras = '<div class="pos-extra"><span>Notas</span><span style="max-width:60%;text-align:right">' + escapeHtml(p.notas) + '</span></div>';
+    }
+
+    return (
+      '<article class="pos-card" data-risk="' + risk.state + '" data-id="' + escapeHtml(p.id) + '">' +
+        '<div class="pos-card-head">' +
+          '<div class="pos-id">' +
+            '<span class="pos-ticker">' + escapeHtml(p.ticker) + '</span>' +
+            '<div class="badge-row">' +
+              '<span class="badge">Ação</span>' +
+              '<span class="badge">Graham</span>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:6px">' +
+            '<span class="status-pill ' + risk.state + '">' + statusText(risk.state) + '</span>' +
+            menuBlock +
+          '</div>' +
+        '</div>' +
+
+        '<div class="pos-prices">' +
+          '<div class="pos-price-block">' +
+            '<div class="label">Preço atual' + (q && q.manual ? " (manual)" : "") + '</div>' +
+            '<div class="value">' + (price !== null ? fmtBRL(price) : "—") + '</div>' +
+          '</div>' +
+          '<div class="pos-price-block fair">' +
+            '<div class="label">Valor justo</div>' +
+            '<div class="value">' + (fair !== null ? fmtBRL(fair) : "—") + '</div>' +
+          '</div>' +
+        '</div>' +
+
+        '<div class="gauge-wrap">' +
+          '<div class="gauge-mid"></div>' +
+          '<div class="gauge-marker" style="left:' + mPos.toFixed(1) + '%"></div>' +
+        '</div>' +
+
+        '<div class="pos-distance ' + risk.state + '">' +
+          '<span class="risk-dot ' + risk.state + '"></span>' +
+          '<span>' + riskLabel(risk.state, risk.pct) + '</span>' +
+        '</div>' +
+
+        errorBlock +
+
+        '<div class="pos-meta">' + metaHtml + '</div>' +
+        extras +
+      '</article>'
+    );
+  }
+
+  document.addEventListener("click", function () {
+    document.querySelectorAll(".pos-menu-dropdown.open").forEach(function (o) { o.classList.remove("open"); });
+  });
+
+  function hidePreview() {
+    document.getElementById("gj_fundPreview").style.display = "none";
+    document.getElementById("gj_manualFundRow").style.display = "none";
+  }
+  function showPreview(res) {
+    var lpa = res.lpa, vpa = res.vpa, price = res.price;
+    var fair = grahamFair(lpa, vpa);
+    var risk = riskState(price, fair);
+    document.getElementById("gj_prevPrice").textContent = price !== null ? fmtBRL(price) : "—";
+    document.getElementById("gj_prevFair").textContent = fair !== null ? fmtBRL(fair) : "—";
+    document.getElementById("gj_prevLpa").textContent = lpa !== null ? fmtBRL(lpa) : "—";
+    document.getElementById("gj_prevVpa").textContent = vpa !== null ? fmtBRL(vpa) : "—";
+    var dist = riskLabel(risk.state, risk.pct);
+    if (res.warning) dist = (dist ? dist + " · " : "") + res.warning;
+    document.getElementById("gj_prevDist").textContent = dist;
+    document.getElementById("gj_prevDist").className = risk.state || "unknown";
+    document.getElementById("gj_fundPreview").style.display = "block";
+    if (lpa !== null && lpa > 0) document.getElementById("gj_posLpa").value = toMaskedMoney(lpa);
+    if (vpa !== null && vpa > 0) document.getElementById("gj_posVpa").value = toMaskedMoney(vpa);
+    document.getElementById("gj_manualFundRow").style.display = "grid";
+  }
+
+  function runFetchForForm() {
+    var ticker = document.getElementById("gj_posTicker").value.trim().toUpperCase();
+    if (!ticker) {
+      showToast("Informe o ticker.");
+      return Promise.resolve(null);
+    }
+    document.getElementById("gj_posTicker").value = ticker;
+    var btn = document.getElementById("gj_fetchFundBtn");
+    btn.disabled = true;
+    btn.textContent = "Buscando...";
+    return fetchQuote(ticker).then(function (res) {
+      btn.disabled = false;
+      btn.textContent = "Buscar";
+      if (res.error) {
+        showToast("Não foi possível buscar: " + res.error);
+        document.getElementById("gj_manualFundRow").style.display = "grid";
+        return null;
+      }
+      if (res.price !== null) {
+        state.quotes[ticker] = { price: res.price, lpa: res.lpa, vpa: res.vpa, error: null };
+      }
+      showPreview(res);
+      if ((res.lpa === null || res.lpa <= 0) || (res.vpa === null || res.vpa <= 0)) {
+        showToast("Cotação ok, mas LPA/VPA incompletos — ajuste manualmente.");
+      } else {
+        showToast("Dados carregados. Confira e clique em Adicionar.");
+      }
+      return res;
+    });
+  }
+
+  function openPosModal(id) {
+    var form = document.getElementById("gj_posForm");
+    form.reset();
+    document.getElementById("gj_posId").value = "";
+    hidePreview();
+    if (id) {
+      var p = state.positions.find(function (x) { return x.id === id; });
+      if (p) {
+        document.getElementById("gj_posModalTitle").textContent = "Editar ação";
+        document.getElementById("gj_posId").value = p.id;
+        document.getElementById("gj_posTicker").value = p.ticker;
+        document.getElementById("gj_posLpa").value = toMaskedMoney(p.lpa);
+        document.getElementById("gj_posVpa").value = toMaskedMoney(p.vpa);
+        document.getElementById("gj_posNotas").value = p.notas || "";
+        document.getElementById("gj_manualFundRow").style.display = "grid";
+        document.getElementById("gj_posSaveBtn").textContent = "Salvar";
+        var q = state.quotes[p.ticker];
+        if (q && !q.error) {
+          showPreview({ price: q.price, lpa: p.lpa, vpa: p.vpa });
+        }
+      }
+    } else {
+      document.getElementById("gj_posModalTitle").textContent = "Nova ação";
+      document.getElementById("gj_posSaveBtn").textContent = "Adicionar";
+    }
+    document.getElementById("gj_posModalOverlay").classList.add("open");
+    document.getElementById("gj_posTicker").focus();
+  }
+  function closePosModal() { document.getElementById("gj_posModalOverlay").classList.remove("open"); }
+
+  document.getElementById("gj_addBtn").addEventListener("click", function () { openPosModal(); });
+  document.getElementById("gj_posCancelBtn").addEventListener("click", closePosModal);
+  document.getElementById("gj_posModalOverlay").addEventListener("click", function (e) {
+    if (e.target === this) closePosModal();
+  });
+
+  document.getElementById("gj_fetchFundBtn").addEventListener("click", function () {
+    runFetchForForm();
+  });
+  document.getElementById("gj_posTicker").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      runFetchForForm();
+    }
+  });
+
+  document.getElementById("gj_posForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var id = document.getElementById("gj_posId").value || uid();
+    var ticker = document.getElementById("gj_posTicker").value.trim().toUpperCase();
+    var notas = document.getElementById("gj_posNotas").value.trim();
+    var lpa = parseNum(document.getElementById("gj_posLpa").value);
+    var vpa = parseNum(document.getElementById("gj_posVpa").value);
+
+    function commit(finalLpa, finalVpa, price, fundSrc) {
+      if (!ticker || finalLpa === null || finalVpa === null || finalLpa <= 0 || finalVpa <= 0) {
+        showToast("LPA e VPA válidos são necessários.");
+        document.getElementById("gj_manualFundRow").style.display = "grid";
+        return;
+      }
+      var existingIdx = state.positions.findIndex(function (x) { return x.id === id; });
+      var fund = null;
+      var src = fundSrc || state.quotes[ticker];
+      if (src) {
+        fund = {
+          pl: src.pl, dy: src.dy,
+          netDebtEquity: src.netDebtEquity, netDebtEbitda: src.netDebtEbitda,
+          netMargin: src.netMargin, roe: src.roe, evEbitda: src.evEbitda
+        };
+      }
+      var pos = { id: id, ticker: ticker, lpa: finalLpa, vpa: finalVpa, notas: notas, fund: fund };
+      if (existingIdx >= 0) {
+        if (!fund && state.positions[existingIdx].fund) pos.fund = state.positions[existingIdx].fund;
+        state.positions[existingIdx] = pos;
+      } else state.positions.push(pos);
+      if (price !== null && price !== undefined) {
+        state.quotes[ticker] = Object.assign({}, src || {}, { price: price, lpa: finalLpa, vpa: finalVpa, error: null });
+      }
+      savePositions();
+      closePosModal();
+      showToast(existingIdx >= 0 ? "Ação atualizada." : "Ação adicionada.");
+      render();
+      refreshQuotes();
+    }
+
+    // Já tem LPA/VPA no formulário (após buscar ou edição)
+    if (lpa !== null && vpa !== null && lpa > 0 && vpa > 0) {
+      var q = state.quotes[ticker];
+      commit(lpa, vpa, q && !q.error ? q.price : null, q);
+      return;
+    }
+
+    // Só ticker: busca e adiciona
+    if (!ticker) {
+      showToast("Informe o ticker.");
+      return;
+    }
+    var saveBtn = document.getElementById("gj_posSaveBtn");
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Buscando...";
+    fetchQuote(ticker).then(function (res) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = document.getElementById("gj_posId").value ? "Salvar" : "Adicionar";
+      if (res.error) {
+        showToast("Falha: " + res.error);
+        document.getElementById("gj_manualFundRow").style.display = "grid";
+        return;
+      }
+      showPreview(res);
+      commit(res.lpa, res.vpa, res.price, res);
+    });
+  });
+
+  function deletePosition(id) {
+    showConfirm({
+      title: "Remover ação",
+      message: "Remover esta ação do radar?",
+      okText: "Remover",
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      state.positions = state.positions.filter(function (x) { return x.id !== id; });
+      savePositions();
+      render();
+      showToast("Ação removida.");
+    });
+  }
+
+  document.getElementById("gj_clearBtn").addEventListener("click", function () {
+    if (state.positions.length === 0) {
+      showToast("Não há ações para limpar.");
+      return;
+    }
+    showConfirm({
+      title: "Limpar todas",
+      message: "Apagar TODAS as " + state.positions.length + " ações?\nExporte antes se precisar.",
+      okText: "Apagar tudo",
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      state.positions = [];
+      savePositions();
+      render();
+      showToast("Todas as ações foram removidas.");
+    });
+  });
+
+  function exportExcel() {
+    if (state.positions.length === 0) {
+      showToast("Nenhuma ação para exportar.");
+      return;
+    }
+    if (typeof XLSX === "undefined") {
+      showToast("Biblioteca Excel não carregou.");
+      return;
+    }
+    var rows = state.positions.map(function (p) {
+      var fair = grahamFair(p.lpa, p.vpa);
+      var q = state.quotes[p.ticker];
+      var price = q && !q.error ? q.price : null;
+      var pct = (price !== null && fair) ? ((price - fair) / fair) * 100 : null;
+      return {
+        "Ticker": p.ticker,
+        "LPA": p.lpa,
+        "VPA": p.vpa,
+        "Valor Justo": fair !== null ? Math.round(fair * 100) / 100 : "",
+        "Preço atual": price !== null ? price : "",
+        "Desvio %": pct !== null ? Math.round(pct * 10) / 10 : "",
+        "Notas": p.notas || ""
+      };
+    });
+    var ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 30 }];
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Valor Justo");
+    var d = new Date();
+    var fname = "radar-valor-justo-" + d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + ".xlsx";
+    XLSX.writeFile(wb, fname);
+    showToast("Excel exportado: " + fname);
+  }
+
+  function importExcel(file) {
+    if (!file || typeof XLSX === "undefined") return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        var wb = XLSX.read(new Uint8Array(e.target.result), { type: "array" });
+        var json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+        if (!json.length) { showToast("Planilha vazia."); return; }
+
+        function findKey(row, candidates) {
+          var keys = Object.keys(row);
+          for (var i = 0; i < candidates.length; i++) {
+            var c = candidates[i].toLowerCase().replace(/\s/g, "");
+            for (var j = 0; j < keys.length; j++) {
+              if (keys[j].toLowerCase().replace(/\s/g, "") === c) return keys[j];
+            }
+          }
+          return null;
+        }
+
+        var sample = json[0];
+        var kTicker = findKey(sample, ["Ticker", "Ativo", "Codigo"]);
+        var kLpa = findKey(sample, ["LPA", "lpa", "EPS", "Lucro"]);
+        var kVpa = findKey(sample, ["VPA", "vpa", "BVPS", "Patrimonial"]);
+        var kNotas = findKey(sample, ["Notas", "notas", "Obs"]);
+
+        if (!kTicker || !kLpa || !kVpa) {
+          showToast("Colunas obrigatórias: Ticker, LPA, VPA.");
+          return;
+        }
+
+        var imported = [];
+        var skipped = 0;
+        json.forEach(function (row) {
+          var ticker = String(row[kTicker] || "").trim().toUpperCase();
+          var lpa = parseNum(row[kLpa]);
+          var vpa = parseNum(row[kVpa]);
+          if (!ticker || lpa === null || vpa === null || lpa <= 0 || vpa <= 0) { skipped++; return; }
+          imported.push({
+            id: uid(),
+            ticker: ticker,
+            lpa: lpa,
+            vpa: vpa,
+            notas: kNotas ? String(row[kNotas] || "").trim() : ""
+          });
+        });
+
+        if (!imported.length) {
+          showToast("Nenhuma linha válida." + (skipped ? " (" + skipped + " ignoradas)" : ""));
+          return;
+        }
+
+        showConfirm({
+          title: "Importar Excel",
+          message: "Foram encontradas " + imported.length + " ação(ões).\n\nSubstituir as atuais ou adicionar?",
+          okText: "Substituir",
+          cancelText: "Adicionar"
+        }).then(function (choice) {
+          if (choice === null) return;
+          if (choice === true) state.positions = imported;
+          else state.positions = state.positions.concat(imported);
+          savePositions();
+          render();
+          refreshQuotes();
+          showToast(imported.length + " ação(ões) importada(s).");
+        });
+      } catch (err) {
+        showToast("Erro ao ler o arquivo.");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  document.getElementById("gj_exportBtn").addEventListener("click", exportExcel);
+  document.getElementById("gj_importBtn").addEventListener("click", function () {
+    document.getElementById("gj_importFile").click();
+  });
+  document.getElementById("gj_importFile").addEventListener("change", function (e) {
+    if (e.target.files[0]) importExcel(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  document.getElementById("gj_settingsBtn").addEventListener("click", function () {
+    document.getElementById("gj_apiToken").value = state.settings.token || "";
+    document.getElementById("gj_apiToken").type = "password";
+    document.getElementById("gj_bolsaiKey").value = state.settings.bolsaiKey || "";
+    document.getElementById("gj_bolsaiKey").type = "password";
+    document.getElementById("gj_settingsModalOverlay").classList.add("open");
+  });
+  document.getElementById("gj_toggleTokenBtn").addEventListener("click", function () {
+    var input = document.getElementById("gj_apiToken");
+    input.type = input.type === "password" ? "text" : "password";
+  });
+  document.getElementById("gj_toggleBolsaiBtn").addEventListener("click", function () {
+    var input = document.getElementById("gj_bolsaiKey");
+    input.type = input.type === "password" ? "text" : "password";
+  });
+  document.getElementById("gj_settingsCancelBtn").addEventListener("click", function () {
+    document.getElementById("gj_settingsModalOverlay").classList.remove("open");
+  });
+  document.getElementById("gj_settingsModalOverlay").addEventListener("click", function (e) {
+    if (e.target === this) this.classList.remove("open");
+  });
+  document.getElementById("gj_settingsSaveBtn").addEventListener("click", function () {
+    state.settings.token = document.getElementById("gj_apiToken").value.trim().replace(/^["']|["']$/g, "");
+    state.settings.bolsaiKey = document.getElementById("gj_bolsaiKey").value.trim().replace(/^["']|["']$/g, "");
+    saveSettings();
+    document.getElementById("gj_settingsModalOverlay").classList.remove("open");
+    showToast("Configurações salvas.");
+    refreshQuotes();
+  });
+
+  document.getElementById("gj_testApisBtn").addEventListener("click", function () {
+    // salva o que está nos campos antes de testar
+    state.settings.token = document.getElementById("gj_apiToken").value.trim().replace(/^["']|["']$/g, "");
+    state.settings.bolsaiKey = document.getElementById("gj_bolsaiKey").value.trim().replace(/^["']|["']$/g, "");
+    saveSettings();
+    var btn = document.getElementById("gj_testApisBtn");
+    btn.disabled = true;
+    btn.textContent = "Testando...";
+    Promise.all([fetchBrapiQuote("PETR4"), fetchBolsaiFundamentals("PETR4")]).then(function (both) {
+      btn.disabled = false;
+      btn.textContent = "Testar APIs";
+      var b = both[0], s = both[1];
+      var parts = [];
+      parts.push(b.price != null ? "brapi OK (R$ " + b.price + ")" : "brapi: " + (b.error || "falhou"));
+      parts.push(
+        s.lpa != null || s.vpa != null
+          ? "bolsai OK (LPA " + (s.lpa != null ? s.lpa : "—") + " / VPA " + (s.vpa != null ? s.vpa : "—") + ")"
+          : "bolsai: " + (s.error || "falhou")
+      );
+      showToast(parts.join(" · "));
+    });
+  });
+
+  document.getElementById("gj_refreshBtn").addEventListener("click", function () { refreshQuotes(); });
+
+  loadState();
+  render();
+  refreshQuotes();
+})();
+
+</script>
+</body>
+</html>
