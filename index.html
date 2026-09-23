@@ -2792,9 +2792,9 @@
     if (price === null || price === undefined || !fair) return { state: "unknown", pct: null };
     var pct = ((price - fair) / fair) * 100;
     var s;
-    if (pct >= 5) s = "danger";       // 5%+ acima do justo
-    else if (pct >= -5) s = "warn";   // faixa ±5%
-    else s = "safe";                  // 5%+ abaixo = desconto
+    if (pct > 1) s = "danger";        // 1%+ acima do justo
+    else if (pct >= -1) s = "warn";   // faixa ±1% = neutro
+    else s = "safe";                  // 1%+ abaixo = desconto
     return { state: s, pct: pct };
   }
 
@@ -3271,27 +3271,37 @@
       };
     }
 
-    return fetch(proxied, { method: "GET", mode: "cors", cache: "no-store" })
-      .then(function (r) {
-        if (!r.ok) throw new Error("fundamentus HTTP " + r.status);
-        return r.text();
-      })
-      .then(parseHtml)
-      .catch(function (err) {
-        // tenta direto (alguns ambientes permitem)
-        return fetch(pageUrl, { method: "GET", mode: "cors", cache: "no-store" })
-          .then(function (r) {
-            if (!r.ok) throw new Error("fundamentus HTTP " + r.status);
-            return r.text();
-          })
-          .then(parseHtml)
-          .catch(function (err2) {
-            return {
-              price: null, lpa: null, vpa: null,
-              error: (err && err.message) || (err2 && err2.message) || "fundamentus falhou"
-            };
-          });
-      });
+    // Cadeia de proxies CORS, na ordem de tentativa. Fundamentus não libera CORS
+    // direto no navegador, então dependemos de um intermediário — se um cair,
+    // tenta o próximo antes de desistir. Todos leem o MESMO html do Fundamentus.
+    var proxyChain = [
+      proxied,
+      pageUrl, // tentativa direta (alguns ambientes/extensões permitem)
+      "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(pageUrl),
+      "https://thingproxy.freeboard.io/fetch/" + pageUrl,
+      "https://proxy.corsfix.com/?url=" + encodeURIComponent(pageUrl)
+    ];
+
+    function tryChain(idx, lastErr) {
+      if (idx >= proxyChain.length) {
+        return {
+          price: null, lpa: null, vpa: null,
+          error: "fundamentus indisponível (" + proxyChain.length + " proxies falharam — última: " +
+            ((lastErr && lastErr.message) || "erro desconhecido") + ")"
+        };
+      }
+      return fetch(proxyChain[idx], { method: "GET", mode: "cors", cache: "no-store" })
+        .then(function (r) {
+          if (!r.ok) throw new Error("fundamentus HTTP " + r.status);
+          return r.text();
+        })
+        .then(parseHtml)
+        .catch(function (err) {
+          return tryChain(idx + 1, err);
+        });
+    }
+
+    return tryChain(0, null);
   }
 
   function pickPositive() {
@@ -3309,19 +3319,20 @@
     return null;
   }
 
-  // Prioridade: preço brapi → fundamentus → bolsai
-  // LPA/VPA: fundamentus → bolsai → brapi (fundamentus é o mais estável p/ VPA no browser)
+  // Preço: brapi → fundamentus (cotação em tempo real, tolera fallback)
+  // LPA/VPA/indicadores: SOMENTE fundamentus — sem mistura com bolsai/brapi,
+  // para nunca exibir um número de fonte diferente sem o usuário saber.
   function combineSources(brapi, bolsai, fund) {
     brapi = brapi || {};
     bolsai = bolsai || {};
     fund = fund || {};
 
     var price = pickPositive(brapi.price, fund.price, bolsai.price);
-    var lpa = pickPositive(fund.lpa, bolsai.lpa, brapi.lpa);
-    var vpa = pickPositive(fund.vpa, bolsai.vpa, brapi.vpa);
+    var lpa = pickPositive(fund.lpa);
+    var vpa = pickPositive(fund.vpa);
 
     if (price === null && lpa === null && vpa === null) {
-      var msg = brapi.error || fund.error || bolsai.error || "sem dados";
+      var msg = fund.error || brapi.error || "sem dados";
       return { price: null, lpa: null, vpa: null, error: msg };
     }
     return {
@@ -3329,14 +3340,16 @@
       lpa: lpa,
       vpa: vpa,
       error: null,
-      warning: (vpa === null ? "VPA ausente — preencha manualmente" : null),
-      pl: pickAny(fund.pl, bolsai.pl),
-      dy: pickAny(fund.dy, bolsai.dy),
-      netDebtEquity: pickAny(fund.netDebtEquity, bolsai.netDebtEquity),
-      netDebtEbitda: pickAny(bolsai.netDebtEbitda),
-      netMargin: pickAny(fund.netMargin, bolsai.netMargin),
-      roe: pickAny(fund.roe, bolsai.roe),
-      evEbitda: pickAny(fund.evEbitda, bolsai.evEbitda)
+      warning: (fund.error
+        ? "Fundamentus falhou (" + fund.error + ") — LPA/VPA não atualizados, preencha manualmente"
+        : (vpa === null ? "VPA ausente no Fundamentus — preencha manualmente" : null)),
+      pl: pickAny(fund.pl),
+      dy: pickAny(fund.dy),
+      netDebtEquity: pickAny(fund.netDebtEquity),
+      netDebtEbitda: pickAny(fund.netDebtEbitda),
+      netMargin: pickAny(fund.netMargin),
+      roe: pickAny(fund.roe),
+      evEbitda: pickAny(fund.evEbitda)
     };
   }
 
@@ -3374,16 +3387,30 @@
   function refreshQuotes() {
     var tickers = Array.from(new Set(state.positions.map(function (p) { return p.ticker; })));
     if (tickers.length === 0) { render(); return Promise.resolve(); }
+    return showConfirm({
+      title: "Atualizar",
+      message: "Atualizar também LPA/VPA (Fundamentus)? Isso deixa a atualização mais lenta. Se recusar, só o preço é atualizado e o LPA/VPA salvo é mantido.",
+      okText: "Sim, atualizar tudo",
+      cancelText: "Só preço"
+    }).then(function (updateFund) {
+      if (updateFund === null) return null; // fechou sem escolher: cancela
+      return runRefreshQuotes(updateFund);
+    });
+  }
+
+  function runRefreshQuotes(updateFund) {
+    var tickers = Array.from(new Set(state.positions.map(function (p) { return p.ticker; })));
+    if (tickers.length === 0) { render(); return Promise.resolve(); }
     var btn = document.getElementById("gj_refreshBtn");
     btn.disabled = true;
     var okPrice = 0, failPrice = 0;
 
-    // Só cotações (brapi). Bolsai não tem CORS no browser — não bloqueia o Atualizar.
+    // Cotação (brapi) sempre; LPA/VPA (Fundamentus) só se updateFund === true.
     var i = 0;
     return tickers.reduce(function (chain, t) {
       return chain.then(function () {
         i++;
-        btn.textContent = "Cotação " + i + "/" + tickers.length;
+        btn.textContent = "Atualizando " + i + "/" + tickers.length;
         return fetchBrapiBatch([t]).then(function (map) {
           var b = map[t] || { price: null, error: "falha" };
           function apply(res) {
@@ -3397,23 +3424,19 @@
               }
             }
           }
-          if (b.price != null) {
+          if (!updateFund) {
             apply(b);
             return null;
           }
-          // Fallback: Fundamentus (cotação + reforço LPA/VPA se faltar)
           return fetchFundamentus(t).then(function (f) {
-            if (f && !f.error) {
-              apply({
-                price: f.price,
-                lpa: f.lpa,
-                vpa: f.vpa,
-                error: null
-              });
-              applyFundToPosition(t, f);
+            if (b.price != null) {
+              apply(b);
+            } else if (f && !f.error && f.price != null) {
+              apply({ price: f.price, lpa: f.lpa, vpa: f.vpa, error: null });
             } else {
               apply(b);
             }
+            if (f && !f.error) applyFundToPosition(t, f);
           });
         }).then(function () {
           if (i % 2 === 0) render();
@@ -3804,7 +3827,7 @@
       closePosModal();
       showToast(existingIdx >= 0 ? "Ação atualizada." : "Ação adicionada.");
       render();
-      refreshQuotes();
+      runRefreshQuotes(false); // preço apenas — LPA/VPA já foi buscado no formulário
     }
 
     // Já tem LPA/VPA no formulário (após buscar ou edição)
@@ -3966,7 +3989,7 @@
           else state.positions = state.positions.concat(imported);
           savePositions();
           render();
-          refreshQuotes();
+          runRefreshQuotes(false); // preço apenas — sem perguntar
           showToast(imported.length + " ação(ões) importada(s).");
         });
       } catch (err) {
@@ -4012,7 +4035,7 @@
     saveSettings();
     document.getElementById("gj_settingsModalOverlay").classList.remove("open");
     showToast("Configurações salvas.");
-    refreshQuotes();
+    runRefreshQuotes(false); // preço apenas — sem perguntar
   });
 
   document.getElementById("gj_testApisBtn").addEventListener("click", function () {
@@ -4042,7 +4065,7 @@
 
   loadState();
   render();
-  refreshQuotes();
+  runRefreshQuotes(false); // preço apenas ao carregar — sem perguntar
 })();
 
 </script>
